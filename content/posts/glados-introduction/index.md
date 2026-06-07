@@ -13,7 +13,7 @@ What better AI assistant/sparring partner could there be than always sarcastic, 
 
 The initial idea was spawned some time ago when I discovered a project online documented by [Nerdaxic](https://github.com/nerdaxic/glados-voice-assistant/tree/raspberry). I came across his [YouTube video](https://youtu.be/Y3h5tKWqf-w?si=LhYbWSumcIEQzuXa) while looking for projects for a [Raspberry Pi 4](https://en.wikipedia.org/wiki/Raspberry_Pi_4) I had just acquired. I was amazed by the level of interaction that was available on the platform. From being able to recognize a custom wake-word to allow voice commands to the utilization of an online [TTS generator](https://glados.c-net.org/) that could provide sound files of anything you wanted her to say. The project also included integration of Arduino powered hardware that included an LED/TFT animated screen for the "eye" and integration with Home Assistant for household control.
 
-![First GLaDOS build on Raspberry Pi](IMG_1712.jpeg)
+![First GLaDOS build on Raspberry Pi](IMG_1712-768x576.jpeg)
 
 I got pretty far with that first version of my own GLaDOS, with capabilities including controlling lights, heaters, calling out the room temperature, and announcing the arrival of emails and text messages — all with the razor blade attitude one would come to expect. However, I wanted more. The speech was limited to the online service, which would cue up the text among hundreds of other users doing their random thing. While the local system would cache responses for use later, getting new dynamic audio could take several minutes. Hardly the level of interaction expected of a future AI Overlord. As such, I got bored… repurposed the RPi… and moved on to obsess over other projects.
 
@@ -31,6 +31,6 @@ While the TTS is flawless, integration with the LLM has stalled due to the proce
 
 Other future plans and enhancements include integration into my Elite Dangerous Sim-Pit project to allow her to act as a fully capable co-pilot, with in-game Push to Talk functionality for quicker and more immersive interactions. I also plan to eventually build a way to interact with her from a mobile device to control and request status of devices at the house. The ultimate goal… getting my 3D printer up and running and building a fully functional physical form. I found a few projects online to provide a starting point, but that will involve pushing my novice design skills to the limit.
 
-![Current hardware setup](IMG_1680.jpeg)
+![Current hardware setup](IMG_1680-768x1024.jpeg)
 
 I'll keep you posted…
