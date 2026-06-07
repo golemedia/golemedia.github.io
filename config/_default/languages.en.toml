@@ -1,0 +1,24 @@
+locale = "en"
+label = "English"
+direction = "ltr"
+weight = 1
+
+title = "golemedia"
+# copyright = "Copy, _right?_ :thinking_face:"
+
+[params]
+  dateFormat = "2 January 2006"
+
+  # mainSections = ["section1", "section2"]
+  # description = "My awesome website"
+
+[params.author]
+  name = "Timothy Hoffpauir"
+  image = "avatar.jpg"
+  email = "info@golemedia.net"
+  headline = "Building AI-integrated systems"
+  bio = "15+ years turning broken processes into working systems. Now pointed at AI."
+  links = [
+    { github = "https://github.com/golemedia" },
+    { linkedin = "https://www.linkedin.com/in/timothy-hoffpauir/" }
+   ]
