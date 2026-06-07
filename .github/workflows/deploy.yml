@@ -37,7 +37,6 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Pages
-        id: pages
         uses: actions/configure-pages@v5
 
       - name: Build with Hugo
@@ -48,7 +47,7 @@ jobs:
           hugo \
             --gc \
             --minify \
-            --baseURL "${{ steps.pages.outputs.base_url }}/"
+            --baseURL "https://github.golemedia.net/"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
