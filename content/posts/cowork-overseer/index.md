@@ -1,9 +1,15 @@
 ---
-title: "Building a Brain for AI That Forgets"
-date: 2026-06-07
-description: "AI sessions are ephemeral by design. Here's the vault-based memory system I built to work around that — and the multi-agent coordinator that grew out of it."
-tags: ["ai", "automation", "python", "llm", "cowork"]
-categories: ["projects"]
+title: Building a Brain for AI That Forgets
+date: 2026-05-02
+description: AI sessions are ephemeral by design. Here's the vault-based memory system I built to work around that — and the multi-agent coordinator that grew out of it.
+tags:
+  - ai
+  - automation
+  - python
+  - llm
+  - cowork
+categories:
+  - projects
 ---
 
 Every AI conversation starts fresh. That's not a bug — it's how these systems work. The model has no memory of what you built together last Tuesday, no awareness of the decision you landed on three sessions ago, no recollection of the context you spent forty-five minutes establishing before the good work actually started. Close the window, open a new one, and you're back at the beginning.

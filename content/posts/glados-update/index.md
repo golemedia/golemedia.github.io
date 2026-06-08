@@ -1,9 +1,18 @@
 ---
-title: "GLaDOS — Status Update"
-date: 2026-06-07
-description: "Where the project actually got to, why it stalled, what the landscape looks like now, and why it's worth picking back up."
-tags: ["glados", "no-skynet", "tts-stt", "virtual-assistant", "llm", "mqtt", "home-assistant"]
-categories: ["projects", "glados"]
+title: GLaDOS — Status Update
+date: 2026-06-02
+description: Where the project actually got to, why it stalled, what the landscape looks like now, and why it's worth picking back up.
+tags:
+  - glados
+  - no-skynet
+  - tts-stt
+  - virtual-assistant
+  - llm
+  - mqtt
+  - home-assistant
+categories:
+  - projects
+  - glados
 ---
 
 When I wrote the [original GLaDOS post](/posts/glados-introduction/), I'd just gotten the voice working well enough to be genuinely excited about it and was being honest about where the project stood. The TTS was solid. The LLM integration was the problem. Response latency from even the smaller local models was long enough that real conversation felt broken, and I left it there.
