@@ -1,0 +1,1485 @@
+<title>Overseer Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* ============ TOKENS — light is the base set, complete on bare :root ============ */
+:root{
+  --ground:#F3F5F6; --panel:#FFFFFF; --panel-2:#EDF1F2; --rule:#D7DEE2; --rule-soft:#E4EAEC;
+  --ink:#12191F; --ink-2:#3F5059; --ink-3:#6B7C86;
+  --accent:#17697A; --accent-soft:rgba(23,105,122,.10); --accent-line:rgba(23,105,122,.28);
+  --ok:#157F52; --attn:#8F6A00; --crit:#AE2E2E; --dormant:#5A6B7A;
+  --ok-bg:rgba(21,127,82,.10); --attn-bg:rgba(143,106,0,.12); --crit-bg:rgba(174,46,46,.10); --dormant-bg:rgba(90,107,122,.10);
+  --shadow:0 1px 2px rgba(18,25,31,.06), 0 8px 24px rgba(18,25,31,.05);
+  --grid:rgba(18,25,31,.07);
+  --map-ground:#EAEFF1; --map-edge:rgba(18,25,31,.16); --map-halo:#FFFFFF;
+  /* project identity — fill is project, never status */
+  --p-edsimpit:#C2553A; --p-devexplore:#1E8296; --p-career:#4A5FC1; --p-trading:#9C4A93;
+  --p-university:#2F7D5B; --p-golemedia:#B07A16; --p-tuning:#5C8A1F; --p-hoffpauir:#8A6A4F;
+  /* every node outside a project is one dim grey; code repos are one deep blue */
+  --p-core:#AEB8C0; --p-repo:#1633C4;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0E141B; --panel:#141C25; --panel-2:#1A242F; --rule:#22303C; --rule-soft:#1B2732;
+    --ink:#E6EDF2; --ink-2:#A7B7C2; --ink-3:#758896;
+    --accent:#5BC0D4; --accent-soft:rgba(91,192,212,.12); --accent-line:rgba(91,192,212,.30);
+    --ok:#4FAE80; --attn:#C99A34; --crit:#D9614C; --dormant:#7D909F;
+    --ok-bg:rgba(79,174,128,.13); --attn-bg:rgba(201,154,52,.14); --crit-bg:rgba(217,97,76,.13); --dormant-bg:rgba(125,144,159,.13);
+    --shadow:0 1px 2px rgba(0,0,0,.35), 0 10px 28px rgba(0,0,0,.30);
+    --grid:rgba(230,237,242,.08);
+    --map-ground:#0B1118; --map-edge:rgba(230,237,242,.17); --map-halo:#0B1118;
+    --p-edsimpit:#E5825F; --p-devexplore:#5BC0D4; --p-career:#8B9BEE; --p-trading:#D18BC8;
+    --p-university:#62B78D; --p-golemedia:#DFAF4A; --p-tuning:#A8CE55; --p-hoffpauir:#BFA184;
+    --p-core:#93A0AB; --p-repo:#6E90FF;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0E141B; --panel:#141C25; --panel-2:#1A242F; --rule:#22303C; --rule-soft:#1B2732;
+  --ink:#E6EDF2; --ink-2:#A7B7C2; --ink-3:#758896;
+  --accent:#5BC0D4; --accent-soft:rgba(91,192,212,.12); --accent-line:rgba(91,192,212,.30);
+  --ok:#4FAE80; --attn:#C99A34; --crit:#D9614C; --dormant:#7D909F;
+  --ok-bg:rgba(79,174,128,.13); --attn-bg:rgba(201,154,52,.14); --crit-bg:rgba(217,97,76,.13); --dormant-bg:rgba(125,144,159,.13);
+  --shadow:0 1px 2px rgba(0,0,0,.35), 0 10px 28px rgba(0,0,0,.30);
+  --grid:rgba(230,237,242,.08);
+  --map-ground:#0B1118; --map-edge:rgba(230,237,242,.17); --map-halo:#0B1118;
+  --p-edsimpit:#E5825F; --p-devexplore:#5BC0D4; --p-career:#8B9BEE; --p-trading:#D18BC8;
+  --p-university:#62B78D; --p-golemedia:#DFAF4A; --p-tuning:#A8CE55; --p-hoffpauir:#BFA184;
+  --p-core:#69757F; --p-repo:#7C9BE8;
+}
+
+*{box-sizing:border-box}
+
+/* ===== containment: no element may widen the page ===== */
+html{overflow-x:hidden}
+.wrap,.panel,.card,.stack,.grid2>*,.maprow>*,.mapside,.insp,.ibody,.changelog,
+.cl,.irow,.qh,.lesson,.t3,.vital,.subrow,.mapwrap>*{min-width:0}
+.qt,.sdet,.cl .txt,.irow>span,.t3 p,.rule-note,.card .head,.card .nx,
+.card .flagline span,.lesson p,figcaption,.readout{min-width:0; overflow-wrap:break-word}
+code,.iid,.sname,.ev,.rcpt{overflow-wrap:anywhere}
+.scroll{overflow-x:auto; overscroll-behavior-x:contain; -webkit-overflow-scrolling:touch; max-width:100%}
+.tip{max-width:min(270px,calc(100vw - 20px))}
+
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;
+  font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px; margin:0 auto; padding:28px 22px 72px}
+
+.src{
+  font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10.5px; letter-spacing:.06em;
+  color:var(--ink-3); display:inline-flex; align-items:center; gap:6px;
+}
+.src::before{content:"›"; color:var(--accent); font-weight:600}
+.src.unread::before{content:"⚠"; color:var(--attn)}
+
+h1,h2,h3{font-family:"IBM Plex Sans Condensed",ui-sans-serif,sans-serif; text-wrap:balance; margin:0}
+h1{font-size:31px; font-weight:700; letter-spacing:-.015em}
+h2{font-size:15px; font-weight:700; letter-spacing:.10em; text-transform:uppercase; color:var(--ink-2)}
+h3{font-size:16px; font-weight:700; letter-spacing:-.005em}
+.eyebrow{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--accent); font-weight:500}
+
+header.mast{display:flex; justify-content:space-between; align-items:flex-end; gap:20px; flex-wrap:wrap;
+  padding-bottom:16px; border-bottom:1px solid var(--rule); margin-bottom:22px}
+.mast .sub{color:var(--ink-2); font-size:13.5px; margin-top:4px; max-width:62ch}
+.stamp{font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--ink-3); text-align:right; line-height:1.7}
+.stamp b{color:var(--ink-2); font-weight:500}
+button.theme{
+  font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.06em; cursor:pointer;
+  background:var(--panel); color:var(--ink-2); border:1px solid var(--rule); border-radius:2px; padding:5px 10px;
+}
+button.theme:hover{border-color:var(--accent); color:var(--accent)}
+button:focus-visible,.card:focus-visible,.q:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+/* banner */
+.banner{display:flex; gap:11px; align-items:flex-start; background:var(--attn-bg);
+  border:1px solid var(--attn); border-left-width:3px; border-radius:3px; padding:12px 15px; margin-bottom:20px}
+.banner .bg{color:var(--attn); font-weight:700; flex:none; line-height:1.4}
+.banner.ok{background:var(--ok-bg); border-color:var(--ok)}
+.banner.ok .bg{color:var(--ok)}
+.banner p{margin:0; font-size:13.5px; color:var(--ink-2)}
+.banner strong{color:var(--ink)}
+
+.pd{display:inline-block; width:7px; height:7px; border-radius:50%; vertical-align:baseline;
+  margin-right:6px; flex:none; cursor:help; border:1.5px solid transparent; position:relative; top:-1px}
+.pd-new{background:var(--ok); box-shadow:0 0 0 2.5px var(--ok-bg)}
+.pd-old{background:var(--attn); box-shadow:0 0 0 2.5px var(--attn-bg)}
+.pd-none{background:transparent; border-color:var(--dormant)}
+.pd-conf{background:var(--crit); box-shadow:0 0 0 2.5px var(--crit-bg); animation:pulse 2.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 2.5px var(--crit-bg)}50%{box-shadow:0 0 0 5px var(--crit-bg)}}
+@media(prefers-reduced-motion:reduce){.pd-conf{animation:none}}
+.dotkey{display:flex; gap:16px; flex-wrap:wrap; align-items:center; margin:0 0 20px;
+  font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--ink-3)}
+.dotkey span.i{display:inline-flex; align-items:baseline}
+.tiers3{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px; margin:0 0 22px}
+.t3{background:var(--panel); border:1px solid var(--rule); border-radius:3px; padding:12px 14px}
+.t3h{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.09em; text-transform:uppercase;
+  font-weight:600; margin-bottom:5px}
+.t3h.ok{color:var(--ok)} .t3h.attn{color:var(--attn)} .t3h.crit{color:var(--crit)}
+.t3 p{margin:0; font-size:12.5px; color:var(--ink-2); line-height:1.55}
+.t3 b{color:var(--ink)}
+/* Explicit column counts, never auto-fit. auto-fit fills the last row with
+   whatever is left and stretches it, which is the ragged edge being removed here.
+   8 tiles / 8,4,2,1 columns => every layout is complete rows. Tiles sit at their
+   natural max and shrink only until the next full-row count fits. */
+.vitals{display:grid; grid-template-columns:repeat(8,minmax(0,1fr)); gap:1px;
+  background:var(--rule-soft); border:1px solid var(--rule); border-radius:3px; overflow:hidden; margin-bottom:8px}
+@media(max-width:1120px){.vitals{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:620px) {.vitals{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:330px) {.vitals{grid-template-columns:minmax(0,1fr)}}
+.vital{background:var(--panel); padding:13px 13px 12px; min-width:0}
+.vital .k{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-3)}
+.vital .v{font-family:"IBM Plex Sans Condensed",sans-serif; font-size:clamp(21px,2.1vw,27px); font-weight:700;
+  line-height:1.15; font-variant-numeric:tabular-nums; margin-top:3px}
+.vital .n{font-size:11.5px; color:var(--ink-3); margin-top:1px}
+.v.good{color:var(--ok)} .v.attn{color:var(--attn)} .v.crit{color:var(--crit)}
+
+.filters{display:flex; gap:7px; flex-wrap:wrap; align-items:center; margin:26px 0 14px}
+.chip{font-family:"IBM Plex Mono",monospace; font-size:11.5px; letter-spacing:.04em; cursor:pointer;
+  background:transparent; color:var(--ink-2); border:1px solid var(--rule); border-radius:2px; padding:5px 11px}
+.chip:hover{border-color:var(--accent-line); color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--accent-soft); border-color:var(--accent); color:var(--accent); font-weight:500}
+.chip .ct{opacity:.65; margin-left:5px}
+
+.cards{display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:12px}
+.card{position:relative; background:var(--panel); border:1px solid var(--rule); border-radius:3px;
+  padding:14px 16px 14px 19px; box-shadow:var(--shadow); cursor:pointer; text-align:left; width:100%;
+  font:inherit; color:inherit; display:block}
+.card::before{content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--dormant)}
+.card.s-ok::before{background:var(--ok)} .card.s-attn::before{background:var(--attn)}
+.card.s-crit::before{background:var(--crit)} .card.s-dormant::before{background:var(--dormant)}
+.card.s-crit::before{animation:breathe 3.4s ease-in-out infinite}
+@keyframes breathe{0%,100%{opacity:1}50%{opacity:.42}}
+.card:hover{border-color:var(--accent-line)}
+.card .top{display:flex; justify-content:space-between; align-items:baseline; gap:10px}
+.card .name{font-family:"IBM Plex Sans Condensed",sans-serif; font-size:19px; font-weight:700; letter-spacing:-.01em;
+  display:inline-flex; align-items:baseline; gap:7px}
+.card .swatch{width:9px; height:9px; border-radius:50%; flex:none; align-self:center}
+.pill{font-family:"IBM Plex Mono",monospace; font-size:9.5px; letter-spacing:.09em; text-transform:uppercase;
+  padding:2.5px 7px; border-radius:2px; white-space:nowrap; font-weight:500; display:inline-flex; align-items:center; gap:4px}
+.pill.ok{background:var(--ok-bg); color:var(--ok)} .pill.attn{background:var(--attn-bg); color:var(--attn)}
+.pill.crit{background:var(--crit-bg); color:var(--crit)} .pill.dormant{background:var(--dormant-bg); color:var(--dormant)}
+.card .head{color:var(--ink-2); font-size:13.5px; margin-top:7px}
+.card .nx{margin-top:10px; padding-top:9px; border-top:1px solid var(--rule-soft); font-size:13px; color:var(--ink)}
+.card .nx b{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.09em; color:var(--ink-3);
+  text-transform:uppercase; display:block; margin-bottom:2px; font-weight:500}
+.card .flagline{margin-top:9px; font-size:12.5px; color:var(--crit); display:flex; gap:7px; align-items:flex-start}
+.card .flagline.cleared{color:var(--ok)}
+.card .flagline.corr{color:var(--accent)}
+.card .cardnote{margin-top:9px; font-size:12.5px; color:var(--ink-3)}
+.card .flagline .g{flex:none; font-weight:700}
+.card .meta{margin-top:10px; display:flex; justify-content:space-between; gap:10px; align-items:center;
+  font-family:"IBM Plex Mono",monospace; font-size:10px; color:var(--ink-3)}
+.card .prov{color:var(--attn)}
+.card .prov.live{color:var(--ok)}
+.card .detail{display:none; margin-top:11px; padding-top:10px; border-top:1px dashed var(--rule)}
+.card.open .detail{display:block}
+.subrow{display:flex; gap:8px; align-items:flex-start; padding:5px 0; font-size:12.5px; border-bottom:1px solid var(--rule-soft)}
+.subrow:last-child{border-bottom:0}
+.subrow .sname{font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--ink); flex:none; width:132px}
+.subrow .sdet{color:var(--ink-3); font-size:12px}
+
+.panel{background:var(--panel); border:1px solid var(--rule); border-radius:3px; padding:16px 18px; box-shadow:var(--shadow)}
+.phead{display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin-bottom:12px; flex-wrap:wrap}
+.grid2{display:grid; grid-template-columns:1.05fr .95fr; gap:22px; margin-top:22px; align-items:start}
+.stack{display:grid; gap:22px}
+@media(max-width:900px){.grid2{grid-template-columns:1fr} .cards{grid-template-columns:1fr}}
+
+/* ============ ECOSYSTEM MAP ============ */
+.mapwrap{margin-top:22px}
+/* Panel sits BELOW the map, always. No collapse: the map is large by default and
+   the panel stays readable at the same time, which is the point of moving it. */
+.maprow{display:grid; grid-template-columns:1fr; gap:0; border:1px solid var(--rule);
+  border-radius:3px; overflow:hidden; box-shadow:var(--shadow); background:var(--panel)}
+.mapstage{background:var(--map-ground); position:relative; overflow:hidden; height:clamp(460px,66vh,760px)}
+@media(max-width:900px){.mapstage{aspect-ratio:3/2; min-height:0}}
+.map{position:absolute; inset:0; width:100%; height:100%; display:block}
+
+.mapside{border-top:1px solid var(--rule); padding:14px 16px 15px;
+  display:grid; grid-template-columns:minmax(0,1.45fr) minmax(0,1fr) minmax(0,1.1fr); gap:18px; align-items:start}
+@media(max-width:980px){.mapside{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+@media(max-width:660px){.mapside{grid-template-columns:minmax(0,1fr)}}
+.mapside .col{display:grid; gap:9px; min-width:0}
+.legend{display:grid; gap:9px}
+.lgband{display:grid; gap:2px}
+.lgt{font-family:"IBM Plex Mono",monospace; font-size:9px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink-3); margin-bottom:2px}
+.lgband:first-child .lg{}
+.lgband .lg{width:100%}
+.lgn{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.lgband{display:grid; grid-template-columns:repeat(auto-fit,minmax(132px,1fr)); gap:2px 12px}
+.lgband .lgt{grid-column:1/-1}
+.lgquick{display:flex; gap:5px; flex-wrap:wrap; margin-bottom:2px}
+.lgquick .chip{padding:3px 8px; font-size:10.5px}
+
+/* ---- collapsible map sidebar ---- */
+
+
+.lg{display:flex; align-items:center; gap:6px; font-family:"IBM Plex Mono",monospace; font-size:10.5px; color:var(--ink-2);
+  cursor:pointer; background:none; border:0; padding:2px 0; text-align:left; font-weight:400}
+.lg:hover{color:var(--ink)}
+.lg .dot{width:9px; height:9px; border-radius:50%; flex:none}
+.lg .n{color:var(--ink-3); margin-left:auto; font-variant-numeric:tabular-nums}
+.lg[aria-pressed="false"]{opacity:.4}
+.mapctl{display:flex; gap:7px; flex-wrap:wrap}
+.readout{font-family:"IBM Plex Mono",monospace; font-size:10.5px; line-height:1.65; color:var(--ink-2);
+  background:var(--panel-2); border:1px solid var(--rule-soft); border-radius:2px; padding:9px 10px; min-height:74px}
+.readout .w{color:var(--accent); font-weight:600}
+.readout .hop{color:var(--ink-3)}
+.appstate{display:grid; gap:3px}
+.approw{display:flex; align-items:center; gap:6px; font-family:"IBM Plex Mono",monospace; font-size:10px}
+.appdot{width:7px; height:7px; border-radius:50%; flex:none}
+.appid{color:var(--ink-3); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; font-size:9.5px}
+.appst{font-weight:600; flex:none}
+.rule-note{font-size:12px; color:var(--ink-3); line-height:1.6}
+.rule-note b{color:var(--ink-2); font-weight:600}
+.mlabel{font-family:"IBM Plex Mono",monospace; font-size:10.5px; font-weight:500; paint-order:stroke fill;
+  stroke:var(--map-halo); stroke-width:3.5px; stroke-linejoin:round}
+.node{cursor:default}
+.node circle{transition:opacity .3s}
+.dimmed{opacity:.13}
+
+/* ============ questions ledger ============ */
+.q{display:block; width:100%; text-align:left; font:inherit; color:inherit; background:transparent;
+  border:0; border-top:1px solid var(--rule-soft); padding:9px 0; cursor:pointer}
+.q:first-of-type{border-top:0}
+.q .qh{display:flex; gap:9px; align-items:baseline}
+.qid{font-family:"IBM Plex Mono",monospace; font-size:11.5px; font-weight:600; color:var(--accent); flex:none; width:30px}
+.qt{font-size:13.5px; flex:1}
+.qb{display:none; font-size:12.5px; color:var(--ink-2); margin:6px 0 2px 39px; max-width:64ch}
+.q.open .qb{display:block}
+.qb .ruled{display:block; margin-top:5px; padding-left:9px; border-left:2px solid var(--ok); color:var(--ink)}
+.qb .ruled b{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--ok); display:block; font-weight:600}
+.gate{font-family:"IBM Plex Mono",monospace; font-size:9.5px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--attn); background:var(--attn-bg); padding:2px 6px; border-radius:2px; flex:none}
+.gate.done{color:var(--ok); background:var(--ok-bg)} .gate.park{color:var(--dormant); background:var(--dormant-bg)}
+.vrow{display:flex; gap:9px; align-items:flex-start; font-size:13px; padding:8px 0; border-top:1px solid var(--rule-soft)}
+.vrow:first-child{border-top:0; padding-top:0}
+.vrow .vg{font-weight:700; flex:none}
+.vrow.done{font-size:12.5px; color:var(--ink-2); padding:5px 0}
+.vsep{font-family:"IBM Plex Mono",monospace; font-size:9.5px; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--ink-3); margin:12px 0 4px; padding-top:9px; border-top:1px solid var(--rule)}
+.qfoot{font-size:12px; color:var(--ink-3); margin:11px 0 0; padding-top:9px; border-top:1px solid var(--rule-soft)}
+.qfoot b{color:var(--ink-2)}
+
+.tier{display:flex; gap:11px; padding:9px 0; border-top:1px solid var(--rule-soft); align-items:flex-start}
+.tier:first-of-type{border-top:0}
+.tnum{font-family:"IBM Plex Sans Condensed",sans-serif; font-size:22px; font-weight:700; color:var(--accent);
+  flex:none; width:26px; line-height:1.1; font-variant-numeric:tabular-nums}
+.tname{font-weight:600; font-size:13.5px}
+.titems{font-size:12.5px; color:var(--ink-3)}
+.tier.t1{background:var(--accent-soft); margin:0 -8px; padding:9px 8px; border-radius:2px}
+
+figure{margin:0}
+figcaption{font-size:12px; color:var(--ink-3); margin-top:9px; max-width:62ch}
+.chart{width:100%; height:150px; display:block; overflow:visible}
+.tip{position:fixed; pointer-events:none; opacity:0; transition:opacity .12s; background:var(--panel);
+  border:1px solid var(--rule); border-radius:3px; padding:7px 10px; box-shadow:var(--shadow); z-index:40;
+  font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--ink); line-height:1.5}
+.tip b{color:var(--accent)}
+
+table.tbl{width:100%; border-collapse:collapse; font-size:12.5px}
+table.tbl th{text-align:left; font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--ink-3); font-weight:500; padding:5px 8px 5px 0; border-bottom:1px solid var(--rule)}
+table.tbl td{padding:5px 8px 5px 0; border-bottom:1px solid var(--rule-soft); font-variant-numeric:tabular-nums; color:var(--ink-2)}
+table.tbl td:first-child{font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--ink)}
+table.tbl td.num{text-align:right; padding-right:14px}
+table.tbl th.num{text-align:right; padding-right:14px}
+td.pos{color:var(--ok)} td.neg{color:var(--crit)}
+.scroll{overflow-x:auto}
+
+/* lessons */
+.lesson{display:grid; grid-template-columns:26px 1fr; gap:11px; padding:12px 0; border-top:1px solid var(--rule-soft)}
+.lesson:first-of-type{border-top:0; padding-top:2px}
+.lnum{font-family:"IBM Plex Sans Condensed",sans-serif; font-size:20px; font-weight:700; color:var(--accent);
+  line-height:1.15; font-variant-numeric:tabular-nums}
+.lesson h3{font-size:14.5px; margin-bottom:3px}
+.lesson p{margin:0; font-size:13px; color:var(--ink-2); max-width:66ch}
+.lesson .ev{font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--ink-3); margin-top:5px; display:block}
+.lesson .ev b{color:var(--ink-2); font-weight:500}
+
+.changelog{display:grid; gap:0}
+.cl{display:grid; grid-template-columns:88px 1fr; gap:12px; padding:8px 0; border-top:1px solid var(--rule-soft); font-size:13px}
+.cl:first-child{border-top:0}
+.cl .tag{font-family:"IBM Plex Mono",monospace; font-size:9.5px; letter-spacing:.07em; text-transform:uppercase;
+  padding:2px 6px; border-radius:2px; align-self:start; text-align:center}
+.cl .tag.done{background:var(--ok-bg); color:var(--ok)}
+.cl .tag.pend{background:var(--attn-bg); color:var(--attn)}
+.cl .txt{color:var(--ink-2)} .cl .txt b{color:var(--ink)}
+.cl code{font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--ink)}
+
+.cl .rcpt{display:block; font-family:"IBM Plex Mono",monospace; font-size:10px; color:var(--ink-3); margin-top:3px}
+.inspgrp{margin-top:16px}
+.inspgrp:first-child{margin-top:0}
+.inspgh{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; padding-bottom:6px; border-bottom:1px solid var(--rule)}
+.inspgs{font-family:"IBM Plex Mono",monospace; font-size:10px; color:var(--ink-3)}
+.insp{padding:12px 0; border-top:1px solid var(--rule-soft)}
+.inspgrp .insp:first-of-type{border-top:0}
+.ihead{display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin-bottom:6px}
+.iid{font-family:"IBM Plex Mono",monospace; font-size:12px; font-weight:600; color:var(--accent)}
+.iarea{font-family:"IBM Plex Sans Condensed",sans-serif; font-size:15px; font-weight:700}
+.istate{font-family:"IBM Plex Mono",monospace; font-size:10px; color:var(--ink-3); margin-left:auto; display:inline-flex; align-items:baseline}
+.ibody{display:grid; gap:4px}
+.irow{display:grid; grid-template-columns:96px 1fr; gap:11px; font-size:13px; color:var(--ink-2); align-items:baseline}
+.irow b{font-family:"IBM Plex Mono",monospace; font-size:9.5px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--ink-3); font-weight:500}
+@media(max-width:620px){.irow{grid-template-columns:1fr; gap:1px}}
+/* ===== mobile ===== */
+@media(max-width:760px){
+  .wrap{padding:18px 13px 56px}
+  h1{font-size:25px}
+  header.mast{align-items:flex-start; gap:12px}
+  .stamp{text-align:left}
+  .panel{padding:14px 13px}
+  .card{padding:13px 13px 13px 16px}
+  .grid2,.stack{gap:18px}
+  .mapwrap{margin-top:26px}
+  .maprow{grid-template-columns:1fr}
+  .mapside{border-left:0; border-top:1px solid var(--rule)}
+  .legend{grid-template-columns:repeat(auto-fit,minmax(118px,1fr))}
+  .irow{grid-template-columns:1fr; gap:1px; margin-bottom:7px}
+  .irow b{color:var(--accent)}
+  .cl{grid-template-columns:1fr; gap:5px}
+  .cl .tag{justify-self:start}
+  .lesson{grid-template-columns:20px 1fr; gap:9px}
+  .lnum{font-size:17px}
+  .lesson h3{font-size:14px}
+  .dotkey{gap:9px 14px; font-size:10.5px}
+  .ihead{gap:7px}
+  .istate{margin-left:0}
+  figcaption{max-width:none}
+}
+
+/* ===== tables become records, not scrollers ===== */
+@media(max-width:640px){
+  .scroll{overflow-x:visible}
+  table.tbl thead{position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap}
+  table.tbl,table.tbl tbody,table.tbl tr,table.tbl td{display:block; width:100%}
+  table.tbl tr{border:1px solid var(--rule); border-radius:3px; background:var(--panel-2);
+    padding:9px 11px; margin-bottom:8px}
+  table.tbl tr:last-child{margin-bottom:0}
+  table.tbl td{border:0; padding:3px 0; display:grid; grid-template-columns:auto 1fr;
+    gap:12px; align-items:baseline}
+  table.tbl td::before{content:attr(data-l); font-family:"IBM Plex Mono",monospace; font-size:9.5px;
+    letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); white-space:nowrap}
+  table.tbl td:not(:first-child){text-align:right}
+  table.tbl td>*,table.tbl td{overflow-wrap:anywhere}
+  table.tbl td:first-child{font-size:13px; font-weight:600; padding-bottom:6px;
+    margin-bottom:4px; border-bottom:1px solid var(--rule-soft)}
+  table.tbl td:first-child::before{color:var(--accent)}
+  table.tbl td:empty{display:none}
+}
+
+footer{margin-top:40px; padding-top:16px; border-top:1px solid var(--rule); color:var(--ink-3); font-size:12px; line-height:1.7}
+@media(prefers-reduced-motion:reduce){
+  .card.s-crit::before{animation:none}
+  .drift{animation:none !important}
+}
+</style>
+
+<div class="wrap">
+  <header class="mast">
+    <div>
+      <div class="eyebrow">Overseer · vault operations</div>
+      <h1>Overseer Console</h1>
+      <p class="sub">A rendered view. Interim board while the live front end is built. Every panel names its source. <strong>This edition was written from the vault itself</strong> — Overseer was rebuilt on 2026-09-04, reached the Mac, and applied the handoff that the previous edition could only queue. <strong>The front end now has a name: OSVC.</strong></p>
+    </div>
+    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px">
+      <button class="theme" id="themeBtn" type="button">◐ theme</button>
+      <div class="stamp">
+        snapshot <b>2026-09-04</b><br>
+        vault <b>~/Documents/Overseer</b><br>
+        <span id="age"></span>
+      </div>
+    </div>
+  </header>
+
+  <div class="banner ok">
+    <span class="bg" aria-hidden="true">●</span>
+    <p><strong>The handoff has been applied. Every figure below was measured from the vault on 2026-09-04.</strong>
+    <code>board.sh</code>, <code>vault-check.sh</code>, <code>audit-metrics.sh</code> and <code>graph.py</code> were all
+    run against the live vault. <strong>Three of the ten inspections were already done before the handoff was written</strong>
+    — it was comparing against this page, not against the vault, and could not know. Every one was re-verified before
+    anything was applied.</p>
+  </div>
+
+  <section class="tiers3">
+    <div class="t3">
+      <div class="t3h ok">Measured this session</div>
+      <p>Every vault count, every project line, the link graph and the ledger row — read from disk on <b>2026-09-04</b>
+      by the scripts that own them. IBKR figures are the broker's, read live; marks move, so the lesson percentages
+      stay pinned to the 3 September close.</p>
+    </div>
+    <div class="t3">
+      <div class="t3h ok">Applied to the vault</div>
+      <p><b>Eight of ten inspections.</b> Gekko archived and bannered · ten rulings written up · Q9's mitigations made
+      checkboxes · the Trading journal reconciled to the broker · the C172 CU drift corrected ·
+      <code>graph.py</code> installed, <b>debugged</b> and run · the ledger row appended.</p>
+    </div>
+    <div class="t3">
+      <div class="t3h attn">Left open, deliberately</div>
+      <p><b>T2</b> the Trading exit criterion — yours to author. <b>S1</b> two <code>.stignore</code> lines that can
+      only be added on Golem-PC. <b>No OSVC question is open</b> — Q10 and Q12 both closed 4 Sep, Q14 is parked, and
+      <b>Phase 3 is unblocked</b>. Next actual work is Phase 0 on <code>vmserver01</code>.</p>
+    </div>
+  </section>
+
+  <div class="dotkey">
+    <span class="i"><span class="pd pd-new"></span>confirmed this session</span>
+    <span class="i"><span class="pd pd-old"></span>carried — older source, not re-read</span>
+    <span class="i"><span class="pd pd-none"></span>proposed — no vault counterpart yet</span>
+    <span class="i"><span class="pd pd-conf"></span>sources disagree — inspect</span>
+    <span style="color:var(--ink-2)">hover any dot for its source and date</span>
+  </div>
+
+  <div class="src" style="margin-bottom:9px">bash meta/audit-metrics.sh — run against the vault 2026-09-04</div>
+  <section class="vitals" id="vitals"></section>
+  <p style="font-size:12px; color:var(--ink-3); margin:8px 0 0">
+    Health signals are Tier&nbsp;0, broken links, orphans and stale notes. Total word count rising is expected and is not a failure. <strong>Every figure here measures the vault itself</strong> — account P/L lived here until 2026-09-04 and did not belong.
+  </p>
+
+  <!-- ============ ECOSYSTEM MAP ============ -->
+  <section class="mapwrap">
+    <div class="phead">
+      <h2>Ecosystem map — file graph</h2>
+      <span class="src">graph.json + graph-repos.json — 292 nodes, 965 edges, measured 2026-09-04</span>
+    </div>
+    <div class="maprow">
+      <div class="mapstage" id="mapstage">
+        <svg class="map" id="map" viewBox="0 0 900 600" role="img"
+             aria-label="A file-level link graph of 292 nodes measured on 2026-09-04: 173 vault notes on an outer ring and 119 git-tracked code files from seven repositories on an inner ring. Nodes are files, sized by how many other files link to them. Project notes are coloured and drawn slightly larger; everything else in the vault is dim grey; code repositories share one deep blue. Animated dots travel one hop outward from a file when it is written."></svg>
+      </div>
+      <aside class="mapside">
+        <div class="col">
+          <div class="src">groups — click to filter</div>
+          <div class="lgquick">
+            <button class="chip" id="lgAll" type="button">all</button>
+            <button class="chip" id="lgVault" type="button">vault only</button>
+            <button class="chip" id="lgCode" type="button">code only</button>
+          </div>
+          <div class="legend" id="legend"></div>
+        </div>
+
+        <div class="col">
+          <div class="src">write events</div>
+          <div class="readout" id="readout">idle</div>
+          <div class="mapctl">
+            <button class="chip" id="playBtn" type="button" aria-pressed="true">&#9208; pause</button>
+            <button class="chip" id="fireBtn" type="button">&#8623; fire a write</button>
+          </div>
+          <p class="rule-note">
+            <b>The dot rule.</b> A write fires from <em>that file</em> — not the project, not the index — and travels
+            <b>one hop</b> along every link it has. One hop, because a note's links go stale when it changes; theirs
+            do not. The index has no special status; it is just the node most writes reach.
+          </p>
+        </div>
+
+        <div class="col">
+          <div class="src unread">GET /state — SIMULATED</div>
+          <div class="appstate" id="appstate"></div>
+          <p class="rule-note">
+            <b>A demonstration of the spec, not live data.</b> On <b>OSVC-01</b> these come from its own API and a node
+            pulses while its app runs. <b>MQTT was dropped as the interface 4 Sep</b> — an API serves state, counts and
+            completion in one place and <b>removes a broker from a Pi booting off microSD</b>. <b>Nothing here can be
+            live:</b> measured this session, a Cowork container reaches no RFC1918 address and the device shell has
+            <b>loopback only</b>.
+          </p>
+        </div>
+
+        <div class="col" style="grid-column:1/-1; border-top:1px solid var(--rule-soft); padding-top:11px">
+          <p class="rule-note" style="max-width:none">
+            <b>Node</b> = one file. <b>Radius</b> ∝ √(link count), so area tracks the count instead of exaggerating it
+            — and <b>project notes get a further 1.2×</b>, because they are the subject and everything else is context.
+            <b>Colour is membership, not status:</b> each project has its own, <b>everything else in the vault is one
+            dim grey</b>, and <b>all seven code repos share one blue</b> — which repo a file belongs to is the label's
+            job, not the fill's. <b>Two rings:</b> the vault outside, the <b>code repos inside</b> — the same boundary
+            <code>vault-audit-protocol.md</code> draws when it excludes <code>repos/</code> from every vault metric.
+            <b>Repo membership is <code>git ls-files</code></b>, which excludes vendored trees for free:
+            EDWinPit-Radio's <code>host/</code> holds 1,624 files and tracks 12; PANELcore's <code>venv/</code> holds
+            575 and tracks 8. Hover any node for its path and link count; click it to fire a write.
+          </p>
+        </div>
+      </aside>
+    </div>
+    <p style="font-size:12px; color:var(--ink-3); margin:9px 0 0; max-width:86ch">
+      <strong>This graph is measured, from two sources kept deliberately apart.</strong> <code>meta/graph.py</code>
+      reads the vault's real <code>[[wikilink]]</code>s — <strong>173 notes, 769 edges</strong>.
+      <code>meta/graph-repos.py</code> reads the code — <strong>119 git-tracked files across seven repositories</strong>.
+      <strong>They stay in separate files because the audit protocol excludes code from every vault metric</strong>;
+      folding them together would corrupt the note counts the ledger tracks. Only this map merges them, and only as a
+      picture.
+      <strong>The largest node is <code>progress/progress-log.md</code> at 104 links</strong>, which is what a
+      write-everything-down mandate looks like as a shape.
+    </p>
+  </section>
+
+  <div class="filters">
+    <span class="src" style="margin-right:6px">bash meta/board.sh — 8 live, Gekko archived to disk 2026-09-04</span>
+    <button class="chip" data-f="all" aria-pressed="true" type="button">All<span class="ct" id="c-all"></span></button>
+    <button class="chip" data-f="flag" aria-pressed="false" type="button">Flagged<span class="ct" id="c-flag"></span></button>
+    <button class="chip" data-f="tim" aria-pressed="false" type="button">Waiting on you<span class="ct" id="c-tim"></span></button>
+    <button class="chip" data-f="active" aria-pressed="false" type="button">Active<span class="ct" id="c-active"></span></button>
+    <span style="font-size:11.5px; color:var(--ink-3); margin-left:2px">— click a card for subsystem detail</span>
+  </div>
+  <section class="cards" id="cards"></section>
+
+  <div class="grid2">
+    <div class="stack">
+      <div class="panel">
+        <div class="phead">
+          <h2>OSVC — open questions</h2>
+          <span class="src">roadmap/open-questions.md · only what is still open</span>
+        </div>
+        <div id="qs"></div>
+      </div>
+
+      <div class="panel">
+        <div class="phead">
+          <h2>Tier 0 — words read at every session start</h2>
+          <span class="src">meta/audit-history.md — ledger row appended 2026-09-04</span>
+        </div>
+        <figure>
+          <svg class="chart" id="tier0" viewBox="0 0 620 150" preserveAspectRatio="none" role="img"
+               aria-label="Tier 0 word count from 8,240 on 2026-08-11 down to 3,307 on 2026-08-31, against a 6,000 budget."></svg>
+          <figcaption><b>8,240 → 3,307</b> against a 6,000 budget. The rise through 12 August was project detail accumulating on the status board; the fall on 31 August is that detail moving into per-project <code>status.md</code> files. <strong>The dashed marker is a definition change</strong> — after it, Tier 0 measures <code>CLAUDE.md</code> plus rendered <code>board.sh</code> output rather than three whole files, so points either side are not strictly comparable. Retiring Gekko removes one more card from the board; the next run should fall again.</figcaption>
+        </figure>
+      </div>
+    </div>
+
+    <div class="stack">
+      <div class="panel">
+        <div class="phead">
+          <h2>OSVC build tiers</h2>
+          <span class="src">frontend-architecture.md</span>
+        </div>
+        <div id="tiers"></div>
+        <p style="font-size:12px; color:var(--ink-3); margin:11px 0 0; padding-top:9px; border-top:1px solid var(--rule-soft)">
+          <strong>The gate matters more than the order</strong> — Tier&nbsp;1 in daily use before Tier&nbsp;2 begins.
+          <span style="color:var(--ok)">Agreed 2026-09-04 (Q16).</span> The discipline the Six Sigma app lacked is now the rule.
+        </p>
+      </div>
+
+      <div class="panel">
+        <div class="phead">
+          <h2>Vault open items</h2>
+          <span class="src">bash meta/vault-check.sh — run 2026-09-04</span>
+        </div>
+        <div id="vaultitems"></div>
+      </div>
+
+      <div class="panel">
+        <div class="phead">
+          <h2>Audit ledger</h2>
+          <span class="src">meta/audit-history.md — 4 Sep row measured, not estimated</span>
+        </div>
+        <div class="scroll"><table class="tbl" id="ledger"></table></div>
+        <p style="font-size:12px; color:var(--ink-3); margin:10px 0 0"><strong>Notes fall for the first time in this ledger</strong> — 177 → 173, as Gekko’s 22 notes leave the counted set for <code>overseer/archive/</code>. Archived rises 22 → 44 by the same move. Tier 0 rises slightly because the board gained text, not cards.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SESSION LOG ============ -->
+  <section style="margin-top:34px">
+    <div class="phead">
+      <h2>Applied this session</h2>
+      <span class="src">every row below returned a tool receipt</span>
+    </div>
+    <div class="panel"><div class="changelog" id="applied"></div></div>
+  </section>
+
+  <section style="margin-top:26px">
+    <div class="phead">
+      <h2>Inspection queue — by what still needs you</h2>
+      <span class="src">still open first · each result verified from disk, not assumed</span>
+    </div>
+    <p style="font-size:13px; color:var(--ink-2); margin:0 0 14px; max-width:82ch">
+      Each of these was re-checked against the live vault <em>before</em> being applied — which is how three of them
+      turned out to need no work, or less work than the handoff assumed. <strong>The two still open are open because
+      they cannot be closed from this machine</strong>, not because they were skipped: one is yours to author, the
+      other can only be done on Golem-PC.
+    </p>
+    <div class="panel"><div id="inspect"></div></div>
+  </section>
+
+  <section style="margin-top:26px">
+    <div class="phead">
+      <h2>Integrated — the staged files are now in the vault</h2>
+      <span class="src">checksums verified against the handoff MANIFEST before use</span>
+    </div>
+    <div class="panel">
+      <p style="font-size:13px; color:var(--ink-2); margin:0 0 13px; max-width:82ch">
+        The previous edition listed three files as <em>staged, not integrated</em>. They arrived as
+        <code>OVERSEER-HANDOFF-2026-09-04/</code> in the external archive, the MANIFEST verified clean
+        (<strong>5 of 5 OK</strong>), and they have been used. <strong>Verifying the checksum was not a formality</strong>
+        — it is what made it safe to run a script this session did not write.
+      </p>
+      <div class="scroll"><table class="tbl">
+        <thead><tr><th>File</th><th>Where it went</th><th>State</th></tr></thead>
+        <tbody>
+          <tr><td>graph.py</td><td><code>meta/graph.py</code></td>
+            <td><strong>integrated, then patched.</strong> Checksum matched the manifest exactly. Its first run disagreed with <code>vault-check.sh</code>; three exclusion bugs found and fixed. Original kept at <code>meta/graph.py.bak-20260904</code>.</td></tr>
+          <tr><td>overseer-inspect.sh</td><td>not used</td>
+            <td><strong>deliberately not run.</strong> It automates G1’s move and sweep — but it was written for a cross-mount archive split that turned out not to apply, and it cannot know which inspections were already done. The work was done directly, with each step verified from disk.</td></tr>
+          <tr><td>01-session-record.md<br>02-inspection-queue.md</td><td>read, not filed</td>
+            <td><strong>correctly kept out of the note graph.</strong> The handoff’s own instruction: no frontmatter, no links, retire once applied. That has now happened.</td></tr>
+        </tbody>
+      </table></div>
+      <p style="font-size:12px; color:var(--ink-3); margin:12px 0 0">
+        <strong>The handoff folder can be retired</strong> once you have read this page. A snapshot of every file this
+        session modified, taken before the first write, sits beside it at
+        <code>Overseer-Archive/_pre-rebuild-snapshot-2026-09-04/</code>.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ TRADING ============ -->
+  <section style="margin-top:34px">
+    <div class="phead">
+      <h2>Trading — the six object lessons</h2>
+      <span class="src">IBKR · positions, trades, 3-month daily bars, company themes — read live 4 Sep</span>
+    </div>
+    <div class="panel">
+      <p style="margin:0 0 14px; font-size:13.5px; color:var(--ink-2); max-width:76ch">
+        Bought on a hunch, chosen for their connection to data centres, held with no strategy and no exit. That is the
+        stated purpose — an instrument for learning how this works. It has been unusually generous. Six weeks produced
+        six lessons that are <em>measurable from your own fills</em> rather than borrowed from a book.
+      </p>
+
+      <div class="scroll" style="margin-bottom:16px">
+        <table class="tbl">
+          <thead><tr>
+            <th>Fill</th><th>Date</th><th class="num">Qty</th><th class="num">Price</th>
+            <th class="num">Notional</th><th class="num">Commission</th><th class="num">Cost %</th>
+          </tr></thead>
+          <tbody>
+            <tr><td>IYW</td><td>2026-07-21</td><td class="num">0.0204</td><td class="num">244.59</td><td class="num">$4.9896</td><td class="num">$0.0499</td><td class="num neg">1.000%</td></tr>
+            <tr><td>MU</td><td>2026-07-21</td><td class="num">0.0051</td><td class="num">972.35</td><td class="num">$4.9590</td><td class="num">$0.0496</td><td class="num neg">1.000%</td></tr>
+            <tr><td>STX</td><td>2026-07-21</td><td class="num">0.0056</td><td class="num">891.03</td><td class="num">$4.9898</td><td class="num">$0.0499</td><td class="num neg">1.000%</td></tr>
+            <tr><td>STX</td><td>2026-07-27</td><td class="num">0.0062</td><td class="num">801.64</td><td class="num">$4.9702</td><td class="num">$0.0000</td><td class="num pos">0.000%</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="lesson">
+        <span class="lnum">1</span>
+        <div>
+          <h3>Your first counterparty is the fee, and it did not behave consistently</h3>
+          <p>Three of four tickets cost exactly 1.000% of notional. The fourth — same account, same week, same kind of
+          instrument — cost nothing. Nobody should have to guess which. Before any position is sized for real, that
+          discrepancy is a question for IBKR, not a rounding error.</p>
+          <span class="ev">total commission <b>$0.1494</b> on <b>$19.9086</b> deployed · <b>0.750%</b> · <b>27%</b> of the whole loss at the 3 Sep close, paid before the market moved</span>
+        </div>
+      </div>
+
+      <div class="lesson">
+        <span class="lnum">2</span>
+        <div>
+          <h3>You own one idea three times</h3>
+          <p>The hunch was accurate — all three genuinely are data-centre exposure. That is the problem. IBKR's own
+          theme graph puts Data Centers as Seagate's <em>first</em> theme and lists Micron under Data Centers, AI and
+          Cloud Computing; IYW's largest holdings are the rank-1 companies in those same themes. Three tickets, one bet.
+          The daily returns agree.</p>
+          <span class="ev">correlation of daily returns, 61 sessions — <b>IYW·MU +0.73</b> · <b>MU·STX +0.71</b> · <b>IYW·STX +0.60</b></span>
+        </div>
+      </div>
+
+      <div class="lesson">
+        <span class="lnum">3</span>
+        <div>
+          <h3>Equal dollars is not equal risk</h3>
+          <p>Roughly $5 went into each. But Micron moves about three and a half times as much as the ETF does, so the
+          risk split was never even — most of what the account did was Micron and Seagate, with IYW along for the ride.
+          Sizing by dollars feels neutral and isn't. Sizing by volatility is the thing that makes three positions
+          behave like three positions.</p>
+          <span class="ev">annualised volatility — <b>MU 96.6%</b> · <b>STX 83.6%</b> · <b>IYW 28.2%</b></span>
+        </div>
+      </div>
+
+      <div class="lesson">
+        <span class="lnum">4</span>
+        <div>
+          <h3>Six weeks measures noise, not skill</h3>
+          <p>Eight days after buying, the account was down 10.5%. Three weeks after that it was up 8.2% and every
+          decision looked vindicated. Today it is down 2.6%. Nothing about the reasoning changed across any of it. The
+          same holding will read as a triumph or a mistake depending on which Tuesday you check, which is precisely why
+          a written thesis and a written exit have to exist <em>before</em> the chart starts talking.</p>
+          <span class="ev">account NAV, time-weighted — <b>$22.37</b> (29 Jul, −10.5%) → <b>$27.04</b> (14 Aug, +8.2%) → <b>$24.35</b> (3 Sep, −2.61%). Opening NAV at inception 27 Apr was $25.00.</span>
+        </div>
+      </div>
+
+      <div class="lesson">
+        <span class="lnum">5</span>
+        <div>
+          <h3>The better of your two Seagate buys was luck, and that is the useful part</h3>
+          <p>You bought STX twice, six days apart, at 891.03 and then 801.64 — no new information, no changed view. The
+          second fill is effectively flat today; the first is down over ten percent. Same name, same thesis, same week,
+          a ten-point spread in outcome decided by the calendar. Entry timing at this horizon is a coin toss. Cost and
+          size are not — they are the two things fully inside your control, which is where attention belongs.</p>
+          <span class="ev">at the 3 Sep close — STX 21 Jul <b>−10.37%</b> · STX 27 Jul <b>−0.38%</b> · blended <b>−5.57%</b></span>
+        </div>
+      </div>
+
+      <div class="lesson">
+        <span class="lnum">6</span>
+        <div>
+          <h3>The journal was wrong about the date, and silent about the exit</h3>
+          <p>The board recorded a single entry on 2026-07-29. There were four fills across two dates, and neither was
+          the 29th — that was the day of the low, which is a plausible way for a wrong date to get remembered. More
+          important than the date: nothing anywhere says what would make you sell. An unstated exit is not a long-term
+          hold, it is an open question that compounds.</p>
+          <span class="ev">recorded <b>2026-07-29</b> · actual <b>2026-07-21</b> ×3 and <b>2026-07-27</b> ×1 · exit criteria <b>none</b></span>
+        </div>
+      </div>
+
+      <div class="scroll" style="margin-top:16px; padding-top:14px; border-top:1px solid var(--rule)">
+        <table class="tbl">
+          <thead><tr>
+            <th>Position</th><th class="num">Qty</th><th class="num">Cost basis</th><th class="num">Mark</th>
+            <th class="num">Value</th><th class="num">P/L</th><th class="num">Max DD since entry</th>
+          </tr></thead>
+          <tbody>
+            <tr><td>IYW</td><td class="num">0.0204</td><td class="num">247.03</td><td class="num">252.66</td><td class="num">$5.154</td><td class="num pos">+2.28%</td><td class="num">−7.00%</td></tr>
+            <tr><td>MU</td><td class="num">0.0051</td><td class="num">982.08</td><td class="num">961.79</td><td class="num">$4.905</td><td class="num neg">−2.07%</td><td class="num">−25.37%</td></tr>
+            <tr><td>STX</td><td class="num">0.0118</td><td class="num">848.29</td><td class="num">801.76</td><td class="num">$9.461</td><td class="num neg">−5.49%</td><td class="num">−20.12%</td></tr>
+            <tr><td><strong>Total</strong></td><td class="num">—</td><td class="num">$20.058</td><td class="num">—</td><td class="num">$19.520</td><td class="num neg">−2.68%</td><td class="num">—</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:12px; color:var(--ink-3); margin:10px 0 0; max-width:80ch">
+        Cost basis includes commission — IYW's 247.03 basis is its 244.59 fill plus 0.9994%, and Seagate's blended
+        two-leg fill plus leg-1 commission reproduces IBKR's 848.28814 to five figures. That cross-check is why the
+        basis column can be trusted. <strong>Marks are live from IBKR at 2026-09-04 ~02:50 UTC and move intraday</strong>;
+        the percentages quoted in the six lessons are struck at the 3 September close so they stay comparable. Max
+        drawdown is measured from first entry on 21 July. <strong>None of this is advice</strong> — it describes what
+        four fills did, kept for the lesson rather than the return.
+      </p>
+    </div>
+  </section>
+
+  <footer>
+    Rendered at snapshot time — <strong>this page is a copy and will age.</strong>
+    The live values are <code>bash meta/board.sh</code> and <code>bash meta/vault-check.sh</code>; <strong>both were run
+    for this snapshot</strong>, along with <code>audit-metrics.sh</code> and <code>graph.py</code>. Where a figure here
+    and a fresh run ever disagree, <strong>the fresh run wins</strong> — that is what makes those scripts the source and
+    this page the view. Trading figures are live from IBKR; the lesson percentages are struck at the 3 September close
+    and are descriptive, not advisory. Mirrored to <code>meta/artifacts/31082026-overseer-console.html</code> and
+    published from that file.
+  </footer>
+</div>
+<div class="tip" id="tip"></div>
+
+<script>
+/* ================================================================= DATA */
+const PROJ_COLOR={EDSimpit:"--p-edsimpit",DevExplore:"--p-devexplore",Career:"--p-career",Trading:"--p-trading",
+  University:"--p-university",golemedia:"--p-golemedia",Tuning:"--p-tuning",Hoffpauir:"--p-hoffpauir",core:"--p-core"};
+/* a group is a project, the vault core, or a code repo. Repos all share one blue on
+   purpose: which repo a file is in is the label’s job, not the fill’s. */
+const KIND_OF = g => { const i=GORDER.indexOf(g); return i<0?"core":GKIND[i]; };
+const COLOR_OF = g => KIND_OF(g)==="repo" ? "--p-repo" : (PROJ_COLOR[g]||"--p-core");
+
+const DATA = {
+ projects:[
+  {p:"EDSimpit",s:"active",dot:"old",src:"status.md frontmatter, verified 31 Aug",h:"Cockpit running on Golem-PC; build-plan phases 0\u20133, 5 and 6 built, most confirmed on hardware.",n:"Desk cooling fans bench bring-up (fully specced, all parts on hand); two EDCoPilot config actions outstanding.",w:"nothing",f:"ESP32 LED strip boot-loops when the strip is connected \u2014 wiring/power, not firmware. Plus a half-closed trap: LED01 broker IP fixed in source, flashed board never confirmed.",prov:"board.sh 4 Sep \u00b7 state-verified 31 Aug"},
+  {p:"DevExplore",s:"active",dot:"new",src:"status.md, rewritten 4 Sep",h:"<strong>OSVC \u2014 OverSeer Visual Control</strong>, named 2026-09-04; the Pi that serves it is <strong>OSVC-01</strong>. vmserver01 up on VMware NAT, nothing configured. Eleven questions ruled and written into the decision log.",n:"Q10 (outbox design) is the last question blocking Phase 3 \u2014 where the outbox lives, its item format, how the UI shows queuing. Then Phase 0 ground truth on vmserver01.",w:"tim",f:"",cleared:"Q9 closed as microSD \u2014 knowingly against the USB-SSD recommendation. Its three mitigations are now binding Phase 7 checkboxes, not prose. Placed at Phase 7 rather than Phase 0 as the handoff said: Phase 0 is vmserver01, and \u201Ca dated image of the built card\u201D is un-signable before the Pi exists.",prov:"vault 4 Sep \u00b7 measured"},
+  {p:"Career",s:"active",dot:"new",src:"Career/status.md, verified 3 Sep",h:"Legal Monkeys CTO round Tue 2026-09-08 15:00 with Jack Crews; round-two study guide built and Udemy course begun 09-03.",n:"Full Workspace tenant lifecycle practice \u2014 OU tree, one onboarding and one offboarding end to end. Deferred to a fresh session on 09-03.",w:"external",f:"Texas Farm Bureau still awaiting response since 08-22.",corr:"Inspection C1 needed no action. The handoff expected the vault to still say \u201Ctwo applications awaiting response\u201D; it does not \u2014 Career/status.md was corrected on 09-01 and again on 09-03, before the handoff was written. Verified, not assumed.",prov:"vault 4 Sep \u00b7 measured"},
+  {p:"Trading",s:"active",dot:"new",src:"Trading/journal.md, rewritten 4 Sep",h:"IBKR Lite cash account. Three data-centre names held as a learning instrument \u2014 bought on a hunch, no strategy, monitored for what they teach. Income-track ETF ladder opened 08-30, nothing bought.",n:"Tim answers the income-track question \u2014 parallel, replacement, or one-off. Nothing scopes until then.",w:"tim",f:"No exit criterion on STX / IYW / MU. Nothing anywhere states what would make him sell \u2014 the only open item fully inside his control, and no broker record can supply it.",cleared:"Journal reconciled to the broker and written to the vault. Four fills across two dates \u2014 21 and 27 July, not one on the 29th. Cost basis cross-checked two independent ways; purpose, commissions and six lessons now on file.",prov:"IBKR live 4 Sep \u00b7 vault written"},
+  {p:"University",s:"active",dot:"new",src:"UNIVERSITY/status.md, verified 4 Sep",h:"<strong>76 CU done, 44 CU / 14 courses remain</strong>; no course currently active. C172 / D315 passed 09/01/26 \u2014 OA, \u201CExemplary,\u201D first attempt.",n:"Wait for WGU to activate the next course. Build nothing until it appears \u2014 expected next in take-order is D077 Marketing/Sales/Customer Contact (3 CU, OA-only).",w:"tim",f:"C172_PA_Attempt_1.pdf is live assessment material. Copied outside the vault and quarantined to _to_delete/ \u2014 <strong>Tim must delete the vault copy; the sandbox cannot.</strong>",resolved:"Inspection U1 was three-quarters already done. C172 was recorded as passed in the degree plan, the INDEX and the board \u2014 but UNIVERSITY/status.md\u2019s body still carried the pre-C172 <b>73 CU / 47 CU / 15 courses</b>. A fourth copy of a fact, and it had drifted. The body no longer stores the figures at all.",prov:"vault 4 Sep \u00b7 measured"},
+  {p:"golemedia",s:"active",dot:"old",src:"status.md frontmatter, verified 3 Sep",h:"Site live at github.golemedia.net, 8 posts published; golemedia.net DNS hardened and cut 15 records to 10 on 09-03.",n:"Answer the three Cloudflare Tunnel questions in dns-cleanup \u2014 they decide what the apex becomes and unblock the migration.",w:"tim",f:"",note:{k:"new",t:"Q6 ruled 4 Sep: DevExplore takes no domain for now, so this migration no longer gates anything outside golemedia."},prov:"board.sh 4 Sep \u00b7 state-verified 3 Sep"},
+  {p:"Tuning",s:"active",dot:"old",src:"status.md frontmatter, verified 31 Aug",h:"Section created 2026-08-11; holds followable optimization procedures so a setup is never re-derived in chat.",n:"Confirm the open items at the bottom of reference/environment.",w:"tim",f:"",prov:"board.sh 4 Sep \u00b7 state-verified 31 Aug"},
+  {p:"Hoffpauir",s:"future",dot:"old",src:"status.md frontmatter, verified 31 Aug",h:"Not started. Continuation of Tim\u2019s late father\u2019s research \u2014 Louisiana colonial, French/Spanish records.",n:"Create projects/Hoffpauir/INDEX.md at kickoff.",w:"tim",f:"",prov:"board.sh 4 Sep \u00b7 state-verified 31 Aug"}
+ ],
+ subs:[
+  {p:"DevExplore",n:"base-os",s:"working",d:"Ubuntu Server 26.04.1 LTS installed and booting in VMware Fusion; net-tools and OpenSSH only"},
+  {p:"DevExplore",n:"vm-networking",s:"working",d:"VMware NAT at 192.168.120.131 — deliberately kept; Mac-only reachability accepted"},
+  {p:"DevExplore",n:"ssh-access",s:"building",d:"OpenSSH installed; key auth, hardening and a confirmed connection from the Mac all outstanding"},
+  {p:"DevExplore",n:"reverse-proxy",new:1,s:"planning",d:"nginx, ruled 2026-09-04 — chosen over Caddy because job postings ask for it"},
+  {p:"DevExplore",n:"vault-sync",new:1,s:"planning",d:"Syncthing peer, folder type Receive Only — read-only enforced at the sync layer, ruled 2026-09-04"},
+  {p:"DevExplore",n:"pi-host",new:1,s:"planning",d:"Pi 4 on microSD for now — accepted risk, offset by making the build fully rebuildable"},
+  {p:"DevExplore",n:"telemetry-db",new:1,s:"planning",d:"SQLite on the Pi, derived data only — must be rebuildable by re-scanning the vault"},
+  {p:"Trading",n:"positions",new:1,s:"working",d:"IYW, MU, STX — reconciled against IBKR 2026-09-04, four fills across two dates"},
+  {p:"Trading",n:"journal",new:1,s:"building",d:"Entry dates and cost basis recovered; reasoning and exit criteria still unwritten"},
+  {p:"Trading",n:"income-ladder",new:1,s:"planning",d:"Opened 2026-08-30, nothing bought — scope still undecided"},
+  {p:"EDSimpit",n:"edwinpit-core",s:"working",d:"Modular rewrite live on Golem-PC — 14 modules incl. voice loop, Pad callouts, Keyring, ambient"},
+  {p:"EDSimpit",n:"panel-controller",s:"working",d:"Production firmware, 4×8 matrix, 27 screens, muxes 0x70/0x71/0x72/0x74"},
+  {p:"EDSimpit",n:"throttle-display",s:"working",d:"Firmware flashed and working on hardware since 2026-07-20"},
+  {p:"EDSimpit",n:"edwinpit-radio",s:"working",d:"v2.1 on RP2040 + Windows SMTC host; running as a CORE-managed module"},
+  {p:"EDSimpit",n:"input-manager",s:"working",d:"Deployed on Golem-PC (TWCS to vJoy, HidHide cloaking)"},
+  {p:"EDSimpit",n:"glados-copilot",s:"working",d:"Full voice loop end-to-end incl. Keyring actuation in-game; TTS on glados-copilot (the reimaged gekko-00 box)"},
+  {p:"EDSimpit",n:"media-share",s:"working",d:"Samba share live; Quest connected and playing, stammering resolved"},
+  {p:"EDSimpit",n:"button-panels",s:"working",d:"Throttle-side in production; Scanner live; stick-side wired not installed"},
+  {p:"EDSimpit",n:"nodemcu-leds",s:"blocked",d:"Firmware runs and connects to MQTT — strip-connected boot loop is a wiring/power problem"},
+  {p:"EDSimpit",n:"desk-cooling-fans",s:"planning",d:"Design complete, every part on hand. Nothing built; next is bench bring-up"},
+  {p:"EDSimpit",n:"daedalus",s:"retired",d:"Retired 2026-08-14 — EDCoPilot's Spansh integration does the job"}
+ ],
+ qs:[
+  {id:"Q16",t:"Tier order, and the gate between tiers",g:"settled",b:"Four tiers, with Tier 1 (status display + outbox) in daily use before Tier 2 begins.",r:"Agreed as proposed. The gate is the rule, not a preference."},
+  {id:"Q2",t:"Which stack?",g:"settled",b:"Python is the known quantity; TypeScript is the stated reason the project exists.",r:"Both. FastAPI for the API, TypeScript for the front end — the app is mostly reading and rendering, so the front end is the app."},
+  {id:"Q3",t:"Caddy or nginx?",g:"settled",b:"Caddy is dramatically simpler and does automatic TLS. nginx is what job postings ask for.",r:"nginx. Employable competence is the point of the project; the extra configuration is the lesson, not a tax."},
+  {id:"Q11",t:"How does the vault reach the Pi?",g:"settled",b:"A network mount fails when the Mac sleeps; a periodic pull is a scheduler to maintain.",r:"Syncthing peer, folder type Receive Only. The read-only boundary is enforced at the sync layer rather than trusted to the app."},
+  {id:"Q9",t:"Boot from microSD or USB SSD?",g:"settled",b:"microSD write endurance is finite and a server writes constantly. Cards fail silently, mid-write. The recommendation was USB SSD.",r:"microSD \u2014 it is what is on hand. Ruling overridden knowingly, with the mitigation attached and binding: the build must be fully rebuildable from a script, write-heavy paths kept off the card, and a dated image stored off the Pi. Written up 4 Sep as three checkboxes at <b>Phase 7</b>, not Phase 0 \u2014 Phase 0 is vmserver01 and the Pi does not exist yet, so a card image cannot gate it. The build script itself does start at Phase 0, because written forward it <em>is</em> the Phase 7 build."},
+  {id:"Q15",t:"Which work leaves the Pi, and to which machine?",g:"settled",b:"The front end is light; only GPU work has a reason to leave.",r:"As much as possible on the Pi. STT/TTS moves to a second machine later — build the Pi up first and find its real ceiling rather than assuming one."},
+  {id:"Q13",t:"Does a SQLite telemetry store happen, and when?",g:"settled",b:"Yes for derived data and telemetry, no for anything the vault already holds.",r:"SQLite, on the Pi. The rule stands: the database may only contain what can be rebuilt by re-scanning the vault."},
+  {id:"Q5",t:"Internet-facing, ever?",g:"settled",b:"This front end renders job applications, career history, trading notes and personal genealogy.",r:"No exposure. A firm no, not a default no — and a later app does not inherit a hole opened for this one."},
+  {id:"Q6",t:"Domain?",g:"settled",b:"A golemedia.net subdomain is the obvious source of a real name.",r:"Conditional: only if a domain buys something real. On a closed network with no public exposure (Q5) it buys almost nothing a hosts entry or mDNS name does not — the honest answer is none for now. If one is wanted later for tidiness, a golemedia subdomain, after the name is chosen and the DNS migration lands."},
+  {id:"Q7",t:"Does this become public content?",g:"settled",b:"The build log is blog and PFIT-exhibit material.",r:"No. Decided early, which is the cheap time to decide it — the notes can be written for you alone."},
+  {id:"Q10",t:"Outbox design — how does OSVC send back?",g:"settled",b:"The app never writes a vault file; it writes to an outbox only Claude drains. What was open: where it lives, the item format, and how queuing is shown.",r:"<b>Typed JSON, one file per item, the type in the filename</b> — <code>brainstorm__20260904T171203Z__slug.json</code> — so a count is one directory listing and <b>no file is opened</b>. Startup shows counts only, and only in a non-focused session; full items on request. <b>An API serves OSVC's own UI</b> (counts, payload, mark-complete) — Tim's design, and it removes the broker. <b>Claude reads the same directory as files</b>, because no Cowork route reaches the LAN — <b>measured three ways, three different reasons:</b> the container is in Anthropic\u2019s cloud and RFC1918 is behind NAT (architecture), the device shell has loopback only (sandbox), and Chrome loads <code>example.com</code> fine but refuses a private address by <b>policy</b>. <b>Syncthing does exactly one job: carry bytes Pi \u2192 Mac</b>, because the file is born where OSVC runs and Claude cannot reach the Pi. Transport is a small <b>bidirectional</b> Syncthing folder outside the vault; it is safe because <b>OSVC only creates and Claude only moves</b>, so no file is ever written by both. Draining is <code>mv</code> to <code>_drained/</code>, never a delete."},
+  {id:"Q12",t:"What is it called?",g:"settled",b:"It needed a name before there was a repo, a systemd unit, a hostname or an MQTT topic root \u2014 renaming after those exist is the annoying kind of cheap.",r:"<b>OSVC \u2014 OverSeer Visual Control.</b> The Pi that serves it is <b>OSVC-01</b>. The <code>-01</code> is deliberate: Q15 anticipates a second host for STT/TTS, so the name already has room for it and nothing has to be renamed to accommodate that. Governs the repo, <code>osvc.service</code>, the hostname, and the MQTT topic root <code>osvc/</code>. <b>A name is not a domain</b> \u2014 Q6 stands."},
+  {id:"Q14",t:"Centralized vault storage",g:"deferred",b:"Parked, not rejected — worth testing later, and it needs a full vault copy on the front-end server which happens anyway. The Send Only / Receive Only proposal was withdrawn the same day: bidirectional sync is load-bearing, because you run Overseer directly on Golem-PC during EDWinPit development."},
+  {id:"Q17",t:"Node flashes fire on file write",g:"settled",b:"Read-detection dropped — unreliable, and not needed.",r:"Extended 2026-09-04 into the map's dot rule: a write fires from the written file and travels one hop along that file's links. Files are the nodes, so the index has no special status — it is simply the node most writes reach."}
+ ],
+ tiers:[
+  {n:1,name:"The spine",it:"Read-only status display (vault + project) · the outbox back to Cowork"},
+  {n:2,name:"Living system",it:"Graph view · drill-down · SQLite telemetry · always-on display · live nodes over the OSVC API"},
+  {n:3,name:"Conversation",it:"Chat interface · model routing"},
+  {n:4,name:"Voice",it:"Reuses glados-copilot (Ubuntu, GTX 970, TTS already running) \u2014 would become OSVC-02"}
+ ],
+ tier0:[
+  {d:"08-11",v:8240,l:"baseline"},{d:"08-11",v:4025,l:"A1 post"},{d:"08-11",v:4033,l:"A1 final"},
+  {d:"08-11",v:4126,l:"A1 closed"},{d:"08-12",v:4662,l:"status refactor"},{d:"08-31",v:4740,l:"board refactor"},
+  {d:"08-31",v:3289,l:"CLAUDE.md audit",redef:true},{d:"08-31",v:3294,l:"orphan rewrite"},{d:"08-31",v:3307,l:"last Aug measure"},{d:"09-04",v:3609,l:"post-rebuild"}
+ ],
+ ledger:[
+  ["2026-08-11","baseline","137","219,230","8,240","12","7","3"],
+  ["2026-08-11","A1 closed (audit files archived)","126","212,610","4,126","0","0","0"],
+  ["2026-08-12","post single-source-status refactor","125","212,266","4,662","0","0","0"],
+  ["2026-08-31","post project-board refactor","176","360,068","4,740","0","0","0"],
+  ["2026-08-31","post CLAUDE.md audit","176","361,481","3,289","0","0","0"],
+  ["2026-08-31","post orphan-check rewrite","177","365,532","3,294","0","0","0"],
+  ["2026-08-31","last measured","177","367,990","3,307","0","0","0"],
+  ["2026-09-04","post Gekko retirement + handoff rebuild + OSVC design","173","384,693","3,609","0","0","0"]
+ ],
+ applied:[
+  {t:"<b>Corrected a claim this board made four hours earlier: there is not <em>one</em> reason the LAN is unreachable, there are three.</b> The first pass tested two routes and concluded <em>no network path</em> \u2014 <b>the same over-generalisation banked as a lesson that morning</b>, impossible-via-the-routes-I-tried stated as impossible. Tim asking whether it was by design forced the third test. <b>Container: architecture, permanent</b> \u2014 RFC1918 is behind NAT and no allowlist creates a route. <b>Device shell: deliberate sandbox.</b> <b>Chrome: policy</b> \u2014 <code>example.com</code> loads, <code>192.168.1.254</code> returns \u201CNavigation to this domain is not allowed.\u201D <b>The conclusion survived; the explanation was wrong in two of three cases.</b>",r:"three direct probes \u00b7 reference/environment corrected"},
+  {t:"<b>Two questions from Tim found the gaps in the outbox design.</b> <em>\u201CWhat mechanism moves the file into _drained?\u201D</em> \u2014 Claude, <code>mv</code> within the mount, <b>but only if <code>Overseer-Outbox</code> is CONNECTED as a folder in the desktop app</b>, which had never been stated. <b>That failure is silent: an unconnected folder and an empty queue look identical.</b> Now a Phase 3a checkbox verified by <code>outbox.sh</code> printing a count rather than nothing. <em>\u201CWhy involve Syncthing at all?\u201D</em> \u2014 because the file is born on the Pi and Claude cannot reach the Pi. Written down explicitly so it never becomes infrastructure nobody remembers the reason for.",r:"frontend-architecture.md \u00b7 build-plan Phase 3a"},
+  {t:"<b>Rejected with the reasoning recorded: the outbox nested inside the vault folder.</b> Checked against Syncthing\u2019s docs rather than recalled \u2014 <b><code>.stignore</code> decides whether a path syncs, never which way</b>, and <b>folder type is a property of the whole folder</b>, so the setting does not exist per path. The nested variant is possible and upstream calls it <em>\u201Cnot supported, recommended or coded for.\u201D</em> <b>Rejected on a sharper ground:</b> it would only be correct while <code>.stignore</code> is right on all three peers, and <b>Golem-PC has needed its two lines by hand since 31 August</b>. Betting the outbox on the one mechanism already half-applied for a week is a bad trade.",r:"syncthing docs \u00b7 DevExplore/decisions.md"},
+  {t:"<b>The round trip closes, and Q10\u2019s third sub-question answered itself out of the architecture.</b> The worry was that a UI which <em>looks</em> like it sent something is worse than one saying \u201Cqueued.\u201D <b>Three acknowledgement states fall out for free, each a fact on disk rather than a UI convention:</b> <b>queued</b> (file in <code>outbox/</code>), <b>picked up</b> (moved to <code>_drained/</code>), <b>landed</b> (the change visible in OSVC\u2019s own vault copy). <b>Ordering is load-bearing:</b> apply and verify the vault write <em>before</em> draining \u2014 drain-then-apply loses an item whenever a session dies between the two, and nothing would ever detect it.",r:"frontend-architecture.md"},
+  {t:"<b>Q10 closed — the outbox is typed JSON, one file per item, with the type in the filename.</b> A count is then <b>one directory listing with nothing opened</b>, which is the whole point: Tim's rule is <em>notice for free, read on request</em>. Startup prints counts only and <b>only in a non-focused session</b> — a status sweep in front of a direct question is noise. <code>meta/outbox.sh</code> is written and tested, and stays silent until the folder exists. <b>Phase 3 is unblocked; nothing OSVC is open.</b>",r:"DevExplore/decisions.md · meta/outbox.sh"},
+  {t:"<b>Measured, not assumed: a Cowork session has no network path to this LAN.</b> Tim proposed an API on OSVC serving counts, payload and mark-complete, and asked whether it could replace MQTT. <b>It is the better design — and it cannot be Claude's path.</b> Both routes were probed: the cloud container has allowlisted egress and reaches no RFC1918 address; <b>the device shell has loopback only</b> — <code>lo</code> alone, no routes, every LAN probe refused. <b>So the API serves OSVC's own UI and Claude reads the same directory as files</b>, which is the only channel that exists. Filed as a standing constraint in <code>reference/environment</code> with the three-line re-test.",r:"direct probe, 4 Sep · lo only, no routes"},
+  {t:"<b>MQTT demoted from interface to optional ingest — Tim's call, and it is right.</b> <code>GET /state</code> plus SSE from OSVC's own server covers a handful of apps and <b>removes a broker from a Pi that boots off a microSD card</b>, one fewer service to survive the failure the Q9 mitigations already assume. The EDSimpit apps already speak MQTT to a broker that already exists, so OSVC can subscribe and re-serve; <b>anything new just POSTs</b>. <b>The liveness semantics survived the change of pipe intact</b> — retained-vs-transient became last-known-state vs heartbeat, and the Last Will became the server marking a source stale.",r:"frontend-architecture.md, revised same day"},
+  {t:"<b>Tim's Syncthing objection was right, and it was about direction rather than transport.</b> <em>\"It wouldn't be able to remove when updated\"</em> — correct: Send Only on the Pi with Receive Only on the Mac means Claude could never drain. <b>A small bidirectional folder fixes it</b>, and stays fork-free because <b>the writers are disjoint by role: OSVC only creates, Claude only moves.</b> No file is ever touched by both. Draining is <code>mv</code> to <code>_drained/</code> — a move always works, and <b>deletion has already been refused once in practice this session</b>.",r:"DevExplore/decisions.md"},
+  {t:"<b>Corrected: a confirmation was read as conversation, and three files stayed wrong.</b> Tim opened a message with <em>\u201CItems deleted.\u201D</em> and the session moved on without writing it anywhere \u2014 <code>UNIVERSITY/status</code>\u2019s flag, the C172 review note, and the vault-health list all still recorded the deletion as <b>pending on him</b>, work he had already done. His read of it was right: <b>\u201Cit should not take a vault audit for the information to be current. Audit should only be verification, not the standard mechanism.\u201D</b> All three cleared, and the missing trigger is now written into <code>CLAUDE.md</code>\u2019s documentation mandate: <b>the moment he says an item is done, clear it in that turn.</b>",r:"vault re-checked \u00b7 no assessment PDF anywhere in the tree"},
+  {t:"<b>This board reorganised around what still needs a person.</b> Inspections group <b>still open \u2192 no action needed \u2192 applied</b> rather than by id, which was burying the two live items among eight finished ones. Vault items do the same, and a <b>resolved item is now one line that drops off after three days</b> \u2014 it confirms the close, it does not re-argue it. Settled questions left the open-questions panel entirely; they live in the decision log, which is that file\u2019s own rule.",r:"Tim\u2019s direction, 2026-09-04"},
+  {t:"<b>Audit metrics measure the vault again.</b> Position P/L was removed \u2014 it measures the brokerage account, not the vault \u2014 and its slot went to <b>stale notes</b>, a health signal the protocol already names but that was only visible buried in a list. <b>Eight tiles is deliberate:</b> it factors 8/4/2/1, so every breakpoint lays out complete rows instead of a stretched ragged remainder.",r:"vault-check.sh \u00b7 verified at four viewports"},
+  {t:"<b>Gekko permanently retired to disk \u2014 inspection G1.</b> All 30 files moved to <code>overseer/archive/Gekko/</code>; 22 notes bannered <code>SUPERSEDED 2026-09-04</code> and set <code>status: archived</code>. <b>The handoff expected this to need a delete grant. It did not</b> \u2014 every Gekko file is current-calendar-year content, so the protocol\u2019s split rule keeps all of it inside the vault, and <code>mv</code> within one mount needs no grant.",r:"22/22 banners verified from disk \u00b7 30/30 files, byte-compare against a pre-move snapshot"},
+  {t:"<b>12 inbound Gekko wikilinks converted to plain backticked paths</b>, not repointed. A wikilink into <code>overseer/archive/</code> reads as <em>broken</em> to <code>vault-check.sh</code> forever, because the checker excludes that tree by design. Repointing them would have traded one problem for a permanent false positive.",r:"vault-check.sh broken links: 2 \u2192 0"},
+  {t:"<b>The ten DevExplore rulings written up</b> in <code>decisions.md</code> with reasoning; <code>open-questions.md</code> cut from fourteen questions to three. Q17\u2019s extension recorded: the dot fires from the file written and travels one hop, <em>because a note\u2019s links go stale when the note changes and their links do not</em>.",r:"14 Q-CLOSED/EXTENDED entries verified in decisions.md"},
+  {t:"<b>The Trading journal was wrong about the basics \u2014 inspection T1.</b> It recorded one entry on 2026-07-29; the broker shows four fills across two dates. <b>The 29th was the day of the account\u2019s low</b>, which is a plausible way for a wrong date to get remembered. Basis cross-checked two ways, purpose recorded as a ruling, six lessons filed.",r:"IBKR trade records \u00b7 journal.md rewritten and read back"},
+  {t:"<b>The CU figures had a fourth copy, and it had drifted \u2014 inspection U1.</b> Frontmatter, degree plan and INDEX all carried the post-C172 <b>76 / 44 / 14</b>; <code>UNIVERSITY/status.md</code>\u2019s body still said <b>73 / 47 / 15</b>. The body no longer stores the figures at all. C172\u2019s credit value \u2014 the number the blind session refused to guess \u2014 is <b>3 CU</b>.",r:"read off UNIVERSITY/degree-plan.md line 80"},
+  {t:"<b><code>graph.py</code> installed \u2014 and it disagreed with <code>vault-check.sh</code> immediately: 172 notes and 45 unresolved links against 173 and 0.</b> That disagreement was the entire point of M1\u2019s landing criterion. <b>graph.py was the one that was wrong, three ways</b> \u2014 its <code>SKIP_DIRS</code> matched bare directory names anywhere, so <code>\u201Carchive\u201D</code> also ate <code>Career/archive/</code> and <code>\u201Cartifacts\u201D</code> also ate <code>meta/artifacts/</code>, while <code>firmware</code> was missing so a code README was wrongly <em>included</em>. Patched to path-anchored exclusions mirroring the protocol\u2019s own set.",r:"both tools now read 173 \u00b7 0 orphans \u00b7 0 unresolved"},
+  {t:"<b>The ecosystem map below is now measured.</b> <code>meta/graph.json</code> holds <b>173 nodes and 767 real edges</b> extracted from actual <code>[[wikilink]]</code>s. The previous edition\u2019s seed was modelled from a project tree and several of its file paths did not exist.",r:"python3 meta/graph.py \u2014 written to meta/graph.json"},
+  {t:"<b>Ledger row appended</b> to <code>meta/audit-history.md</code>, plus a method-changes row recording the graph.py patch so the discontinuity is explainable rather than mysterious.",r:"meta/audit-metrics.sh, run after G1"},
+  {t:"<b>The live C172 pre-assessment PDF is out of the course folder.</b> A SHA-256-verified copy sits outside the vault; the vault copy is quarantined at <code>_to_delete/</code>. <b>It is still inside the vault</b> \u2014 the delete grant was requested up front as the protocol requires and was refused by the sandbox classifier, not by Tim.",r:"checksum match confirmed both sides"},
+  {t:"<b>A dead cross-project thread closed.</b> <em>gekko-00 Infrastructure Reuse</em> asked whether EDSimpit could borrow spare compute on Gekko\u2019s server. It is moot because the sharing already happened completely \u2014 <b>EDSimpit did not get headroom on that box, it got the box.</b>",r:"cross-project-opportunities.md"},
+  {t:"<b>Q12 closed — the front end is <b>OSVC</b>, OverSeer Visual Control, and the Pi that serves it is <b>OSVC-01</b>.</b> It was the last question that had to be answered before anything gets built carrying a name: the repo, <code>osvc.service</code>, the hostname, the MQTT topic root. <b>The <code>-01</code> is doing real work</b> — Q15 anticipates a second host for STT/TTS, so the name already has room for it and nothing gets renamed later.",r:"Tim, 2026-09-04 · written to DevExplore/decisions.md"},
+  {t:"<b>The map now carries the code as well as the vault — 292 nodes, 965 edges.</b> A second extractor, <code>meta/graph-repos.py</code>, reads <b>git-tracked files only</b>, which is what excludes vendored trees for free: EDWinPit-Radio tracks 12 of the 1,624 files in its <code>host/</code>, PANELcore tracks 8 of 575 in <code>venv/</code>, the Hugo site tracks 35 of 470 in <code>themes/</code>. <b>It writes a separate file</b> — folding code into <code>graph.json</code> would corrupt the note counts the audit ledger tracks.",r:"meta/graph-repos.py → meta/graph-repos.json"},
+  {t:"<b>The MQTT live-node requirement is specced, not simulated into existence.</b> Topic root <code>osvc/</code>, <b>retained <code>state</code> and transient <code>heartbeat</code></b> — that split is the design: retained state means a browser loading at 3am knows immediately what is running, while a retained heartbeat would hand it a timestamp from a process that died an hour ago. <b>Every publisher sets a Last Will</b>, because a process killed with SIGKILL cannot publish its own death and without one a crashed app stays lit forever.",r:"DevExplore/roadmap/frontend-architecture"},
+  {t:"<b>This page\u2019s hosted version was read before republishing</b>, satisfying the artifact mirror rule that the previous edition recorded as unreachable from Cowork. The documented dead-end was the egress proxy blocking the frame host \u2014 the Artifact tool does not use that path.",r:"artifact read \u00b7 1,271 lines \u00b7 rule 4 satisfied"}
+ ],
+ edges:[["Career","University"],["Career","golemedia"],["University","golemedia"],["golemedia","EDSimpit"],
+        ["Career","EDSimpit"],["DevExplore","University"],["DevExplore","Career"],["DevExplore","golemedia"],
+        ["DevExplore","Trading"],["Trading","Career"]]
+};
+
+/* ===== MEASURED graph — two sources, merged only here =====
+   meta/graph.json      173 vault notes, 769 edges   (meta/graph.py)
+   meta/graph-repos.json 119 code nodes, 196 edges   (meta/graph-repos.py, git ls-files)
+
+   They are kept as SEPARATE files on purpose. vault-audit-protocol.md excludes
+   repos/, firmware/ and the Hugo site from every vault metric, so folding code
+   into graph.json would corrupt the note counts the audit ledger tracks. The
+   Console merges them as a visual overlay; the vault never does.
+
+   Node tuple: [id, groupIndex, degree, isHubOrPrimary]. Edge: [nodeIdx, nodeIdx]. */
+const GORDER=["EDSimpit","DevExplore","Career","Trading","University","golemedia","Tuning","Hoffpauir","core","EDWinPit-CORE","EDWinPit-COPILOT","EDWinPit-Radio","EDWinPit-LED01","EDWinPit-TSC-Firmware","PANELcore","golemedia-site"];
+const GKIND=["proj","proj","proj","proj","proj","proj","proj","proj","core","repo","repo","repo","repo","repo","repo","repo"];
+const GNODES=[["CLAUDE.md",8,40,0],["Career/INDEX.md",2,24,1],["Career/archive/2026-06-target-roles.md",2,5,0],["Career/job-search/index.md",2,20,0],["Career/job-search/land-range-spec.md",2,3,0],["Career/job-search/legal-monkeys-ai-angle.md",2,4,0],["Career/job-search/legal-monkeys-application.md",2,9,0],["Career/job-search/legal-monkeys-culture-concern.md",2,4,0],["Career/job-search/legal-monkeys-interview-prep.md",2,10,0],["Career/job-search/legal-monkeys-screen-debrief.md",2,8,0],["Career/job-search/opportunity-report-2026-07.md",2,7,0],["Career/job-search/texas-farm-bureau.md",2,9,0],["Career/job-search/tfb-app-admin-application.md",2,8,0],["Career/job-search/tfb-application-fillin.md",2,4,0],["Career/job-search/waco-vs-dallas-cost-of-living.md",2,6,0],["Career/master-facts.md",2,19,0],["Career/portfolio-projects/index.md",2,6,0],["Career/portfolio-projects/project-documentation-brainstorm.md",2,7,0],["Career/references.md",2,6,0],["Career/resume/notes.md",2,4,0],["Career/resume/resume-playbook.md",2,17,0],["Career/resume/tailoring-notes-technical-support.md",2,6,0],["Career/resume/tailoring-notes-texas-hydraulics.md",2,4,0],["Career/role-definitions.md",2,8,0],["Career/status.md",2,16,0],["Career/wgu-gpa-and-grading.md",2,6,0],["Career/work-strategy.md",2,10,0],["Tims Brainstorms.md",8,11,0],["Trading/INDEX.md",3,10,1],["Trading/curriculum.md",3,7,0],["Trading/journal.md",3,8,0],["Trading/research/data-center-buildout-2026.md",3,6,0],["Trading/research/dividend-etf-ladder-2026.md",3,8,0],["Trading/rules-and-mechanics.md",3,9,0],["Trading/status.md",3,7,0],["Trading/strategy-playbook.md",3,7,0],["Tuning/INDEX.md",6,7,1],["Tuning/status.md",6,4,0],["Tuning/vr/alien-rogue-incursion-quest3.md",6,3,0],["Tuning/vr/quest3-vr-setup.md",6,4,0],["UNIVERSITY/INDEX.md",4,29,1],["UNIVERSITY/PFIT-portfolio/INDEX.md",4,18,0],["UNIVERSITY/PFIT-portfolio/essays/career-outlook.md",4,3,0],["UNIVERSITY/PFIT-portfolio/essays/reflective.md",4,2,0],["UNIVERSITY/PFIT-portfolio/essays/strengths.md",4,2,0],["UNIVERSITY/PFIT-portfolio/exhibit-candidates.md",4,8,0],["UNIVERSITY/PFIT-portfolio/requirements.md",4,7,0],["UNIVERSITY/academic-integrity-guardrail.md",4,19,0],["UNIVERSITY/certification-plan.md",4,5,0],["UNIVERSITY/completed-courses/C172 Network and Security Foundations/INDEX.md",4,22,0],["UNIVERSITY/completed-courses/C172 Network and Security Foundations/pa-attempt-1-review.md",4,11,0],["UNIVERSITY/completed-courses/C172 Network and Security Foundations/topic-map.md",4,16,0],["UNIVERSITY/completed-courses/C172 Network and Security Foundations/transcript-notes/01-network-devices-and-cables.md",4,3,0],["UNIVERSITY/completed-courses/C172 Network and Security Foundations/transcript-notes/02-network-types-topologies-architectures.md",4,2,0],["UNIVERSITY/completed-courses/C172 Network and Security Foundations/transcript-notes/03-networking-standards-and-models.md",4,4,0],["UNIVERSITY/completed-courses/C172 Network and Security Foundations/transcript-notes/04-network-commands.md",4,2,0],["UNIVERSITY/completed-courses/C172 Network and Security Foundations/transcript-notes/05-virtual-and-cloud-computing.md",4,3,0],["UNIVERSITY/completed-courses/C172 Network and Security Foundations/transcript-notes/06-cia-triad.md",4,4,0],["UNIVERSITY/completed-courses/C172 Network and Security Foundations/transcript-notes/07-attacks-threats-risks-vulnerabilities.md",4,2,0],["UNIVERSITY/completed-courses/C172 Network and Security Foundations/transcript-notes/08-principles-of-network-security-design.md",4,3,0],["UNIVERSITY/completed-courses/C172 Network and Security Foundations/transcript-notes/09-securing-a-network.md",4,3,0],["UNIVERSITY/completed-courses/C172 Network and Security Foundations/transcript-notes/10-user-authentication-and-access-control.md",4,4,0],["UNIVERSITY/completed-courses/C172 Network and Security Foundations/transcript-notes/11-cloud-and-wireless-security.md",4,3,0],["UNIVERSITY/completed-courses/C172 Network and Security Foundations/transcript-notes/12-security-governance.md",4,3,0],["UNIVERSITY/completed-courses/C179 Business of IT Applications/INDEX.md",4,8,0],["UNIVERSITY/completed-courses/C179 Business of IT Applications/task1-source-index.md",4,4,0],["UNIVERSITY/completed-courses/C456 English Composition 2/overseer-workspace/research-paper-index.md",4,3,0],["UNIVERSITY/completed-courses/C456 English Composition 2/overseer-workspace/source-tracker.md",4,1,0],["UNIVERSITY/completed-courses/D076 Finance Skills for Managers/INDEX.md",4,22,0],["UNIVERSITY/completed-courses/D076 Finance Skills for Managers/cohort-decks.md",4,15,0],["UNIVERSITY/completed-courses/D076 Finance Skills for Managers/deck-notes/u3-fundamental-financial-principles.md",4,4,0],["UNIVERSITY/completed-courses/D076 Finance Skills for Managers/deck-notes/u4-ratio-analysis.md",4,5,0],["UNIVERSITY/completed-courses/D076 Finance Skills for Managers/deck-notes/u5m9-forecasting.md",4,5,0],["UNIVERSITY/completed-courses/D076 Finance Skills for Managers/deck-notes/u6-financial-decision-making.md",4,4,0],["UNIVERSITY/completed-courses/D076 Finance Skills for Managers/topic-map.md",4,14,0],["UNIVERSITY/completed-courses/D076 Finance Skills for Managers/transcript-notes/u3-fundamental-financial-principles.md",4,4,0],["UNIVERSITY/completed-courses/D076 Finance Skills for Managers/transcript-notes/u4-financial-ratios-review.md",4,5,0],["UNIVERSITY/completed-courses/D076 Finance Skills for Managers/transcript-notes/u5m9-forecasting-part1.md",4,4,0],["UNIVERSITY/completed-courses/D076 Finance Skills for Managers/transcript-notes/u5m9-forecasting-part2.md",4,4,0],["UNIVERSITY/completed-courses/D076 Finance Skills for Managers/transcript-notes/u6-financial-decision-making.md",4,4,0],["UNIVERSITY/completed-courses/D076 Finance Skills for Managers/u4-collapse-map.md",4,5,0],["UNIVERSITY/completed-courses/D079 Business Environment Applications II/INDEX.md",4,10,0],["UNIVERSITY/completed-courses/D079 Business Environment Applications II/task1-rubric-map.md",4,5,0],["UNIVERSITY/completed-courses/D079 Business Environment Applications II/task1-source-index.md",4,7,0],["UNIVERSITY/completed-courses/D079 Business Environment Applications II/task2-rubric-map.md",4,4,0],["UNIVERSITY/completed-courses/INDEX.md",4,10,0],["UNIVERSITY/course-notes/C722-project-management.md",4,5,0],["UNIVERSITY/course-notes/C955-applied-statistics.md",4,7,0],["UNIVERSITY/course-notes/C955-review-test-1-study-guide.md",4,2,0],["UNIVERSITY/course-notes/D078-business-structures.md",4,4,0],["UNIVERSITY/course-notes/D089-principles-of-economics.md",4,3,0],["UNIVERSITY/degree-plan.md",4,17,0],["UNIVERSITY/reference/apa7-word-styles.md",4,6,0],["UNIVERSITY/status.md",4,9,0],["blog/index.md",8,11,0],["meta/artifacts/README.md",8,7,0],["meta/audit-history.md",8,10,0],["meta/cowork-instructions-field.md",8,2,0],["meta/tag-registry.md",8,3,0],["meta/vault-audit-protocol.md",8,12,0],["meta/vault-sync.md",8,11,0],["overseer/cross-project-opportunities.md",8,23,0],["overseer/projects-index.md",8,28,0],["progress/archive-2026.md",8,13,0],["progress/progress-log.md",8,104,1],["projects/DevExplore/INDEX.md",1,18,1],["projects/DevExplore/decisions.md",1,9,0],["projects/DevExplore/infrastructure/vmserver01.md",1,11,0],["projects/DevExplore/roadmap/build-plan.md",1,11,0],["projects/DevExplore/roadmap/frontend-architecture.md",1,12,0],["projects/DevExplore/roadmap/open-questions.md",1,8,0],["projects/DevExplore/status.md",1,9,0],["projects/DevExplore/systems/base-os.md",1,6,0],["projects/DevExplore/systems/ssh-access.md",1,5,0],["projects/DevExplore/systems/vm-networking.md",1,8,0],["projects/EDSimpit/INDEX.md",0,50,1],["projects/EDSimpit/builds/flightstick-base.md",0,1,0],["projects/EDSimpit/builds/twcs-mods.md",0,3,0],["projects/EDSimpit/failures/rabbit-holes.md",0,10,0],["projects/EDSimpit/gameplay/README.md",0,7,0],["projects/EDSimpit/gameplay/engineers.md",0,2,0],["projects/EDSimpit/gameplay/guardian-modules.md",0,2,0],["projects/EDSimpit/gameplay/powerplay.md",0,4,0],["projects/EDSimpit/gameplay/reference/ships-released-post-cutoff.md",0,3,0],["projects/EDSimpit/gameplay/roles/powerplay-merit-grind.md",0,4,0],["projects/EDSimpit/gameplay/ship-roster.md",0,5,0],["projects/EDSimpit/games/elite-dangerous.md",0,3,0],["projects/EDSimpit/hardware/inventory.md",0,15,0],["projects/EDSimpit/hardware/network.md",0,8,0],["projects/EDSimpit/pcb/MANUFACTURING-PLAN.md",0,4,0],["projects/EDSimpit/pcb/START-HERE.md",0,3,0],["projects/EDSimpit/pcb/WIRING-GUIDE.md",0,2,0],["projects/EDSimpit/reference/color-reference.md",0,8,0],["projects/EDSimpit/reference/decisions.md",0,6,0],["projects/EDSimpit/reference/ed-controls-reference.md",0,5,0],["projects/EDSimpit/reference/ed-status-flags.md",0,7,0],["projects/EDSimpit/reference/edcopilot-surface.md",0,8,0],["projects/EDSimpit/reference/frontier-capi.md",0,5,0],["projects/EDSimpit/reference/git-workflow.md",0,6,0],["projects/EDSimpit/reference/glados-x-spec.md",0,3,0],["projects/EDSimpit/reference/journal-trigger-catalog.md",0,7,0],["projects/EDSimpit/reference/mqtt-topics.md",0,16,0],["projects/EDSimpit/reference/stylebert-tts-recovery.md",0,5,0],["projects/EDSimpit/reference/throttle-pad-map.md",0,7,0],["projects/EDSimpit/roadmap/build-plan-2026-08.md",0,9,0],["projects/EDSimpit/roadmap/core-ui-and-panel.md",0,10,0],["projects/EDSimpit/roadmap/edcopilot-integration.md",0,12,0],["projects/EDSimpit/roadmap/edwinpit-core-framework.md",0,19,0],["projects/EDSimpit/roadmap/ideas.md",0,2,0],["projects/EDSimpit/roadmap/open-questions.md",0,20,0],["projects/EDSimpit/status.md",0,15,0],["projects/EDSimpit/systems/button-panels.md",0,6,0],["projects/EDSimpit/systems/daedalus.md",0,8,0],["projects/EDSimpit/systems/desk-cooling-fans.md",0,6,0],["projects/EDSimpit/systems/edwinpit-core.md",0,11,0],["projects/EDSimpit/systems/edwinpit-radio.md",0,9,0],["projects/EDSimpit/systems/glados-copilot.md",0,13,0],["projects/EDSimpit/systems/input-manager.md",0,7,0],["projects/EDSimpit/systems/media-share-glados-copilot.md",0,3,0],["projects/EDSimpit/systems/nodemcu-leds.md",0,12,0],["projects/EDSimpit/systems/panel-controller.md",0,10,0],["projects/EDSimpit/systems/throttle-display.md",0,13,0],["projects/Hoffpauir/status.md",7,2,1],["projects/golemedia/INDEX.md",5,10,1],["projects/golemedia/dns-cleanup.md",5,5,0],["projects/golemedia/status.md",5,7,0],["projects/golemedia/voice.md",5,10,0],["reference/environment.md",8,27,0],["reference/lessons-learned.md",8,10,0],["reference/workspace-ou-vs-groups.md",8,2,0],["roadmap/open-questions.md",8,5,0],["templates/blog-post.md",8,3,0],["templates/project-extraction-prompt.md",8,3,0],["EDWinPit-CORE/",9,48,1],["EDWinPit-CORE/.gitignore",9,2,0],["EDWinPit-CORE/EDWinPit-Ambient.py",9,3,0],["EDWinPit-CORE/EDWinPit-CORE.py",9,3,0],["EDWinPit-CORE/EDWinPit-Keyring.py",9,3,0],["EDWinPit-CORE/EDWinPit-Log.py",9,3,0],["EDWinPit-CORE/EDWinPit-MQTT.py",9,3,0],["EDWinPit-CORE/EDWinPit-Processor.py",9,3,0],["EDWinPit-CORE/EDWinPit-ReMapper.py",9,3,0],["EDWinPit-CORE/EDWinPit-Reader.py",9,3,0],["EDWinPit-CORE/EDWinPit-TSC.py",9,3,0],["EDWinPit-CORE/README.md",9,3,0],["EDWinPit-CORE/computer/EDWinPit-Computer.py",9,1,0],["EDWinPit-CORE/computer/static/.gitkeep",9,1,0],["EDWinPit-CORE/computer/templates/index.html",9,1,0],["EDWinPit-CORE/config.py",9,3,0],["EDWinPit-CORE/db.py",9,3,0],["EDWinPit-CORE/mosquitto.conf",9,3,0],["EDWinPit-CORE/mosquitto_data/.gitkeep",9,1,0],["EDWinPit-CORE/requirements.txt",9,2,0],["EDWinPit-CORE/triggers/__init__.py",9,2,0],["EDWinPit-CORE/triggers/_template.py",9,3,0],["EDWinPit-CORE/triggers/approach_body.py",9,3,0],["EDWinPit-CORE/triggers/carrier_jump.py",9,3,0],["EDWinPit-CORE/triggers/disembark.py",9,3,0],["EDWinPit-CORE/triggers/dock_fighter.py",9,3,0],["EDWinPit-CORE/triggers/dock_srv.py",9,3,0],["EDWinPit-CORE/triggers/docked.py",9,3,0],["EDWinPit-CORE/triggers/embark.py",9,3,0],["EDWinPit-CORE/triggers/fsd_jump.py",9,3,0],["EDWinPit-CORE/triggers/fss_all_bodies.py",9,3,0],["EDWinPit-CORE/triggers/fss_body_signals.py",9,3,0],["EDWinPit-CORE/triggers/fss_discovery.py",9,3,0],["EDWinPit-CORE/triggers/launch_fighter.py",9,3,0],["EDWinPit-CORE/triggers/launch_srv.py",9,3,0],["EDWinPit-CORE/triggers/leave_body.py",9,3,0],["EDWinPit-CORE/triggers/liftoff.py",9,3,0],["EDWinPit-CORE/triggers/load_game.py",9,3,0],["EDWinPit-CORE/triggers/loadout.py",9,3,0],["EDWinPit-CORE/triggers/location.py",9,3,0],["EDWinPit-CORE/triggers/music_track.py",9,3,0],["EDWinPit-CORE/triggers/progress.py",9,3,0],["EDWinPit-CORE/triggers/rank.py",9,3,0],["EDWinPit-CORE/triggers/reputation.py",9,3,0],["EDWinPit-CORE/triggers/saa_scan_complete.py",9,3,0],["EDWinPit-CORE/triggers/saa_signals.py",9,3,0],["EDWinPit-CORE/triggers/scan.py",9,3,0],["EDWinPit-CORE/triggers/touchdown.py",9,3,0],["EDWinPit-CORE/triggers/undocked.py",9,2,0],["EDWinPit-COPILOT/",10,9,1],["EDWinPit-COPILOT/.gitignore",10,2,0],["EDWinPit-COPILOT/README.md",10,3,0],["EDWinPit-COPILOT/config.py",10,3,0],["EDWinPit-COPILOT/copilot.py",10,3,0],["EDWinPit-COPILOT/edwinpit-copilot.service",10,3,0],["EDWinPit-COPILOT/grammar/commands.yaml",10,1,0],["EDWinPit-COPILOT/requirements.txt",10,3,0],["EDWinPit-COPILOT/runbrain.sh",10,3,0],["EDWinPit-COPILOT/wingitpush.bat",10,2,0],["EDWinPit-Radio/",11,12,1],["EDWinPit-Radio/.gitignore",11,2,0],["EDWinPit-Radio/Controls.cpp",11,3,0],["EDWinPit-Radio/Controls.h",11,3,0],["EDWinPit-Radio/Display.cpp",11,3,0],["EDWinPit-Radio/Display.h",11,3,0],["EDWinPit-Radio/EDWinPit-Radio.ino",11,3,0],["EDWinPit-Radio/PlaybackState.h",11,3,0],["EDWinPit-Radio/README.md",11,3,0],["EDWinPit-Radio/SpotifyClient.cpp",11,3,0],["EDWinPit-Radio/SpotifyClient.h",11,3,0],["EDWinPit-Radio/config.h",11,3,0],["EDWinPit-Radio/secrets.h.example",11,2,0],["EDWinPit-LED01/",12,5,1],["EDWinPit-LED01/.gitignore",12,2,0],["EDWinPit-LED01/EDWinPit-LED01.ino",12,3,0],["EDWinPit-LED01/README.md",12,3,0],["EDWinPit-LED01/secrets.h.example",12,3,0],["EDWinPit-LED01/wingitpush.bat",12,2,0],["EDWinPit-TSC-Firmware/",13,8,1],["EDWinPit-TSC-Firmware/.gitignore",13,2,0],["EDWinPit-TSC-Firmware/.vscode/arduino.json",13,2,0],["EDWinPit-TSC-Firmware/.vscode/c_cpp_properties.json",13,2,0],["EDWinPit-TSC-Firmware/EDWinPit-TSC-Firmware.ino",13,3,0],["EDWinPit-TSC-Firmware/README.md",13,3,0],["EDWinPit-TSC-Firmware/ed_logo.h",13,3,0],["EDWinPit-TSC-Firmware/secrets.h.example",13,3,0],["EDWinPit-TSC-Firmware/wingitpush.bat",13,2,0],["PANELcore/",14,8,1],["PANELcore/.gitignore",14,2,0],["PANELcore/Firmware/PANELcore_pico_v1/PANELcore_pico_v1.ino",14,1,0],["PANELcore/README.md",14,3,0],["PANELcore/config.json",14,3,0],["PANELcore/launch_panelcore.command",14,3,0],["PANELcore/panelcore.py",14,3,0],["PANELcore/requirements.txt",14,3,0],["PANELcore/wingitpush.bat",14,2,0],["golemedia-site/",15,22,1],["golemedia-site/.github/workflows/deploy.yml",15,1,0],["golemedia-site/.gitignore",15,2,0],["golemedia-site/.gitmodules",15,3,0],["golemedia-site/archetypes/default.md",15,1,0],["golemedia-site/config/_default/hugo.toml",15,2,0],["golemedia-site/config/_default/languages.en.toml",15,3,0],["golemedia-site/config/_default/markup.toml",15,3,0],["golemedia-site/config/_default/menus.en.toml",15,3,0],["golemedia-site/config/_default/module.toml",15,3,0],["golemedia-site/config/_default/params.toml",15,2,0],["golemedia-site/content/_index.md",15,1,0],["golemedia-site/content/posts/cowork-overseer/index.md",15,1,0],["golemedia-site/content/posts/downtime/index.md",15,1,0],["golemedia-site/content/posts/elite-parser/index.md",15,1,0],["golemedia-site/content/posts/gekko/index.md",15,1,0],["golemedia-site/content/posts/glados-introduction/index.md",15,1,0],["golemedia-site/content/posts/glados-update/index.md",15,1,0],["golemedia-site/content/posts/pachinko/index.md",15,1,0],["golemedia-site/content/posts/simpit-flight-stick-mod/img_1794.webp",15,2,0],["golemedia-site/content/posts/simpit-flight-stick-mod/index.md",15,2,0],["golemedia-site/hugo.toml",15,2,0],["golemedia-site/themes/congo",15,1,0]];
+const GEDGES=[[0,1],[0,24],[0,27],[0,28],[0,34],[0,36],[0,37],[0,40],[0,41],[0,47],[0,90],[0,91],[0,93],[0,94],[0,95],[0,96],[0,97],[0,98],[0,99],[0,100],[0,101],[0,102],[0,103],[0,104],[0,105],[0,108],[0,109],[0,111],[0,115],[0,150],[0,162],[0,163],[0,164],[0,165],[0,166],[0,167],[0,168],[0,170],[0,171],[0,172],[1,3],[1,4],[1,6],[1,10],[1,11],[1,14],[1,15],[1,16],[1,17],[1,18],[1,20],[1,23],[1,24],[1,25],[1,26],[1,40],[1,41],[1,48],[1,91],[1,101],[1,102],[1,104],[1,105],[2,16],[2,17],[2,26],[2,42],[2,104],[3,4],[3,5],[3,6],[3,7],[3,8],[3,9],[3,10],[3,11],[3,12],[3,14],[3,17],[3,18],[3,20],[3,21],[3,22],[3,24],[3,26],[3,41],[3,104],[4,10],[5,8],[5,9],[5,15],[6,7],[6,8],[6,9],[6,12],[6,15],[6,21],[6,104],[7,8],[7,9],[8,9],[8,15],[8,21],[8,24],[8,95],[8,104],[9,15],[9,24],[9,104],[10,14],[10,20],[10,26],[10,104],[11,12],[11,15],[11,20],[11,23],[11,24],[11,26],[11,104],[12,13],[12,15],[12,20],[12,23],[12,104],[13,15],[13,25],[13,104],[14,26],[14,40],[14,104],[15,16],[15,18],[15,20],[15,21],[15,23],[15,24],[15,25],[15,26],[15,45],[15,101],[15,104],[16,17],[16,26],[16,45],[17,26],[17,41],[17,104],[18,24],[18,45],[18,104],[19,20],[19,22],[19,41],[19,46],[20,21],[20,22],[20,23],[20,24],[20,25],[20,40],[20,41],[20,92],[20,104],[20,109],[21,104],[22,41],[23,24],[23,26],[23,104],[24,102],[24,104],[24,164],[24,165],[24,168],[24,169],[25,40],[25,104],[27,101],[27,102],[27,103],[27,104],[27,106],[27,109],[27,144],[27,145],[27,147],[27,150],[28,29],[28,30],[28,31],[28,32],[28,33],[28,34],[28,35],[28,102],[28,104],[29,30],[29,32],[29,33],[29,34],[29,35],[29,104],[30,31],[30,32],[30,33],[30,34],[30,35],[30,104],[31,32],[31,33],[31,35],[31,104],[32,33],[32,34],[32,35],[32,104],[33,34],[33,35],[33,99],[33,104],[34,102],[35,104],[36,37],[36,38],[36,39],[36,99],[36,102],[36,167],[37,102],[37,167],[38,104],[38,167],[39,115],[39,127],[39,167],[40,41],[40,47],[40,48],[40,49],[40,50],[40,64],[40,65],[40,66],[40,68],[40,74],[40,81],[40,85],[40,86],[40,87],[40,88],[40,89],[40,90],[40,91],[40,92],[40,93],[40,101],[40,102],[40,104],[40,105],[41,42],[41,43],[41,44],[41,45],[41,46],[41,48],[41,91],[41,101],[41,104],[41,105],[42,46],[43,46],[44,46],[45,46],[45,104],[45,115],[45,163],[46,104],[47,49],[47,50],[47,64],[47,65],[47,68],[47,69],[47,81],[47,82],[47,83],[47,84],[47,85],[47,86],[47,87],[47,89],[47,91],[47,93],[47,104],[48,91],[48,104],[49,50],[49,51],[49,52],[49,53],[49,54],[49,55],[49,56],[49,57],[49,58],[49,59],[49,60],[49,61],[49,62],[49,63],[49,68],[49,85],[49,91],[49,93],[49,95],[49,104],[50,51],[50,54],[50,56],[50,57],[50,59],[50,60],[50,63],[50,104],[51,52],[51,53],[51,54],[51,55],[51,56],[51,57],[51,58],[51,59],[51,60],[51,61],[51,62],[51,63],[51,101],[51,104],[52,54],[57,61],[61,62],[64,65],[64,83],[64,85],[64,92],[64,101],[64,104],[65,104],[66,67],[66,85],[68,69],[68,70],[68,71],[68,72],[68,73],[68,74],[68,75],[68,76],[68,77],[68,78],[68,79],[68,80],[68,81],[68,85],[68,87],[68,90],[68,91],[68,93],[68,104],[69,70],[69,71],[69,72],[69,73],[69,74],[69,75],[69,76],[69,77],[69,78],[69,79],[69,80],[69,87],[69,104],[70,74],[70,75],[71,74],[71,76],[71,80],[72,74],[72,77],[72,78],[73,74],[73,79],[74,75],[74,76],[74,77],[74,78],[74,79],[74,91],[74,104],[76,80],[80,104],[81,82],[81,83],[81,84],[81,85],[81,91],[81,92],[81,104],[82,83],[82,86],[82,104],[83,84],[83,92],[83,104],[84,104],[85,91],[85,93],[85,104],[86,91],[86,104],[87,88],[87,91],[87,104],[89,91],[89,104],[91,93],[91,101],[91,104],[92,104],[93,102],[93,104],[94,96],[94,101],[94,102],[94,104],[94,115],[94,163],[94,165],[94,166],[94,170],[94,171],[95,102],[95,104],[95,167],[95,168],[96,99],[96,100],[96,102],[96,104],[96,109],[96,166],[96,167],[96,168],[97,100],[98,99],[98,104],[99,100],[99,101],[99,102],[99,103],[99,104],[99,166],[99,167],[100,102],[100,104],[100,107],[100,109],[100,110],[100,115],[100,167],[101,102],[101,104],[101,105],[101,106],[101,111],[101,115],[101,142],[101,152],[101,156],[101,163],[101,167],[101,168],[102,103],[102,104],[102,105],[102,111],[102,115],[102,150],[102,162],[102,163],[102,165],[102,167],[102,168],[102,170],[103,104],[103,115],[103,133],[103,138],[103,147],[103,149],[103,154],[103,166],[103,168],[104,105],[104,106],[104,107],[104,108],[104,109],[104,110],[104,112],[104,114],[104,115],[104,118],[104,127],[104,129],[104,132],[104,135],[104,136],[104,137],[104,138],[104,139],[104,140],[104,141],[104,142],[104,143],[104,144],[104,145],[104,146],[104,147],[104,149],[104,153],[104,155],[104,156],[104,159],[104,160],[104,161],[104,163],[104,164],[104,166],[104,167],[104,168],[104,170],[104,172],[105,106],[105,107],[105,108],[105,109],[105,110],[105,111],[105,112],[105,113],[105,114],[105,163],[105,167],[106,107],[106,108],[106,109],[106,110],[106,114],[107,108],[107,110],[107,111],[107,112],[107,114],[107,115],[107,167],[108,110],[108,111],[108,112],[108,113],[108,114],[108,167],[109,110],[109,156],[109,166],[109,167],[110,111],[111,112],[111,114],[112,113],[113,114],[113,167],[114,167],[115,116],[115,117],[115,118],[115,119],[115,123],[115,126],[115,127],[115,128],[115,129],[115,130],[115,131],[115,132],[115,133],[115,134],[115,137],[115,138],[115,139],[115,140],[115,141],[115,142],[115,143],[115,144],[115,145],[115,146],[115,147],[115,148],[115,149],[115,150],[115,151],[115,152],[115,153],[115,154],[115,155],[115,156],[115,157],[115,158],[115,159],[115,160],[115,161],[115,167],[117,127],[117,149],[118,127],[118,138],[118,148],[118,149],[118,150],[118,157],[118,159],[118,161],[119,120],[119,121],[119,122],[119,123],[119,124],[119,125],[120,121],[122,124],[122,125],[122,149],[123,125],[124,125],[124,149],[125,149],[126,154],[126,157],[127,128],[127,139],[127,149],[127,153],[127,155],[127,156],[127,157],[127,159],[127,160],[127,161],[128,141],[128,149],[128,154],[128,158],[128,159],[128,167],[129,130],[129,160],[130,160],[131,160],[132,145],[132,147],[132,152],[132,155],[132,159],[132,161],[133,147],[133,149],[133,151],[133,152],[134,136],[134,141],[134,149],[134,151],[135,140],[135,144],[135,145],[135,146],[135,147],[135,150],[136,141],[136,144],[136,146],[136,150],[136,156],[136,167],[137,140],[137,141],[137,154],[138,154],[138,161],[140,141],[140,143],[140,154],[141,143],[141,146],[141,147],[141,152],[141,153],[141,154],[141,155],[141,159],[141,161],[142,156],[142,167],[143,154],[143,156],[143,161],[144,145],[144,146],[144,147],[144,150],[145,146],[145,147],[145,150],[145,160],[146,147],[146,150],[146,152],[146,156],[146,160],[147,149],[147,150],[147,154],[147,155],[147,156],[147,157],[147,159],[147,161],[149,150],[149,151],[149,155],[149,157],[149,159],[149,160],[149,161],[150,153],[150,159],[150,161],[151,157],[151,160],[152,154],[152,156],[153,159],[155,161],[155,167],[156,158],[156,167],[159,167],[161,167],[163,164],[163,165],[163,166],[164,165],[165,166],[166,170],[167,168],[168,169],[171,172],[173,174],[173,175],[173,176],[173,177],[173,178],[173,179],[173,180],[173,181],[173,182],[173,183],[173,184],[173,185],[173,186],[173,187],[173,188],[173,189],[173,190],[173,191],[173,192],[173,193],[173,194],[173,195],[173,196],[173,197],[173,198],[173,199],[173,200],[173,201],[173,202],[173,203],[173,204],[173,205],[173,206],[173,207],[173,208],[173,209],[173,210],[173,211],[173,212],[173,213],[173,214],[173,215],[173,216],[173,217],[173,218],[173,219],[173,220],[173,221],[174,175],[175,176],[176,177],[177,178],[178,179],[179,180],[180,181],[181,182],[182,183],[183,184],[184,188],[188,189],[189,190],[190,192],[193,194],[194,195],[195,196],[196,197],[197,198],[198,199],[199,200],[200,201],[201,202],[202,203],[203,204],[204,205],[205,206],[206,207],[207,208],[208,209],[209,210],[210,211],[211,212],[212,213],[213,214],[214,215],[215,216],[216,217],[217,218],[218,219],[219,220],[220,221],[222,223],[222,224],[222,225],[222,226],[222,227],[222,228],[222,229],[222,230],[222,231],[223,224],[224,225],[225,226],[226,227],[227,229],[229,230],[230,231],[232,233],[232,234],[232,235],[232,236],[232,237],[232,238],[232,239],[232,240],[232,241],[232,242],[232,243],[232,244],[233,234],[234,235],[235,236],[236,237],[237,238],[238,239],[239,240],[240,241],[241,242],[242,243],[243,244],[245,246],[245,247],[245,248],[245,249],[245,250],[246,247],[247,248],[248,249],[249,250],[251,252],[251,253],[251,254],[251,255],[251,256],[251,257],[251,258],[251,259],[252,255],[255,256],[256,257],[257,258],[258,259],[253,254],[260,261],[260,262],[260,263],[260,264],[260,265],[260,266],[260,267],[260,268],[261,263],[263,264],[264,265],[265,266],[266,267],[267,268],[269,270],[269,271],[269,272],[269,273],[269,274],[269,275],[269,276],[269,277],[269,278],[269,279],[269,280],[269,281],[269,282],[269,283],[269,284],[269,285],[269,286],[269,287],[269,288],[269,289],[269,290],[269,291],[271,272],[272,290],[274,275],[275,276],[276,277],[277,278],[278,279],[288,289]];
+
+/* Inspections — none of these have been run. Each says what to check and how you know it worked. */
+const INSPECT=[
+ {id:"G1",area:"Gekko",st:"applied",
+  act:"Archive <code>projects/Gekko/</code> per the protocol split rule, banner every moved note, sweep surviving references.",
+  ver:"<b>Landed.</b> 30/30 files in <code>overseer/archive/Gekko/</code>, byte-compared against a pre-move snapshot \u2014 sets identical, the only 22 files that differ are the 22 that gained a banner. <code>vault-check.sh</code>: <b>0 broken links, 0 orphans.</b> Gekko\u2019s card is off the board.",
+  stg:"<b>The handoff was wrong about the hard part.</b> It expected a cross-mount move needing a delete grant on the vault. Every Gekko file is current-calendar-year content, so the split rule keeps all of it inside the vault \u2014 <code>mv</code> within one mount, no grant, no residue."},
+ {id:"Q1",area:"DevExplore",st:"applied",
+  act:"Write the ten rulings into the vault; mark Q10 as the last question blocking Phase 3.",
+  ver:"<b>Landed.</b> Fourteen <code>Q\u2026 CLOSED/EXTENDED</code> entries in <code>decisions.md</code>; <code>open-questions.md</code> now holds exactly Q10, Q12, Q14.",
+  stg:"Written to <code>decisions.md</code> rather than left in <code>open-questions.md</code> \u2014 the file\u2019s own rule is that an answered question <em>moves</em>, with its reasoning."},
+ {id:"Q2",area:"DevExplore",st:"applied",
+  act:"Turn Q9\u2019s rebuildability condition into checkboxes rather than prose.",
+  ver:"<b>Landed, with one deliberate deviation.</b> Three checkboxes at <b>Phase 7</b>, not Phase 0 as the handoff specified.",
+  stg:"<b>Why the deviation:</b> Phase 0 is <code>vmserver01</code>. The Pi does not exist yet, so \u201Ca dated image of the built card\u201D cannot be ticked there \u2014 it would have made Phase 0 permanently un-signable. The <em>build script</em> did go into Phase 0, because written forward it becomes the Phase 7 build instead of a memory exercise."},
+ {id:"T1",area:"Trading",st:"applied",
+  act:"Replace the single 2026-07-29 journal entry with the four verified fills, the basis, the purpose and the six lessons.",
+  ver:"<b>Landed.</b> The journal\u2019s fill table matches the broker exactly. The old <code>(unrecorded \u2014 Tim to fill)</code> rows are gone; the 07-29 snapshot is kept as dated history with a correction banner over it.",
+  stg:"The 07-29 section\u2019s <em>numbers</em> were right for that date. Only its framing \u2014 that 07-29 was the entry and the entries were unknowable \u2014 was wrong, so it was corrected in place rather than deleted."},
+ {id:"T2",area:"Trading",st:"open",
+  act:"Write an exit criterion. Nothing anywhere states what would make you sell.",
+  ver:"<b>Not done, and not doable here.</b> A future session must be able to read it and act without asking what you meant.",
+  stg:"<b>Nothing staged, by design.</b> This one is yours to author \u2014 the only open Trading item fully inside your control. It is recorded as the project\u2019s flag so it cannot quietly age."},
+ {id:"M1",area:"Tooling",st:"applied",
+  act:"Install <code>graph.py</code>, run it, and check whether its totals agree with <code>vault-check.sh</code>.",
+  ver:"<b>Landed \u2014 and the criterion fired.</b> First run: <b>172 notes, 45 unresolved</b> against vault-check\u2019s <b>173 and 0</b>. graph.py was wrong. After the patch both read <b>173 \u00b7 0 orphans \u00b7 0 unresolved.</b>",
+  stg:"Three bugs, all in one over-broad exclusion set: bare-name matching meant <code>\u201Carchive\u201D</code> ate <code>Career/archive/</code> and <code>\u201Cartifacts\u201D</code> ate <code>meta/artifacts/</code>, while a missing <code>firmware</code> entry wrongly <em>included</em> a code README. It also could not resolve <code>.base</code> targets or ignore documented syntax examples. <b>The synthetic test vault had none of those shapes</b>, which is why it passed."},
+ {id:"A1",area:"Audit",st:"applied",
+  act:"Re-measure after G1 and append the ledger row.",
+  ver:"<b>Landed.</b> <code>| 2026-09-04 | post Gekko retirement + handoff rebuild | 173 | 376,223 | 3,321 | 0 | 0 | 0 |</code>",
+  stg:"<b>Notes fall for the first time in the ledger</b> \u2014 177 \u2192 173 \u2014 and archived rises 22 \u2192 44. Both are the same move seen from two sides."},
+ {id:"C1",area:"Career",st:"noop",
+  act:"Check whether the vault still says \u201Ctwo applications awaiting response.\u201D",
+  ver:"<b>No action needed \u2014 verified, not assumed.</b> <code>Career/status.md</code> carries the 09-03 state: CTO round booked for Tue 09-08 with Jack Crews.",
+  stg:"<b>The vault was already correct before the handoff was written.</b> The handoff was comparing against this page, not against the vault. Applying it as written would have re-introduced state fixed on 09-01."},
+ {id:"U1",area:"University",st:"applied",
+  act:"Record the C172 pass, remove the \u201Cbuild nothing\u201D line, recompute CU.",
+  ver:"<b>Three-quarters already done; one real drift found and fixed.</b> C172 was recorded as passed in the degree plan, the INDEX and the board. <code>UNIVERSITY/status.md</code>\u2019s <em>body</em> still carried <b>73 / 47 / 15</b> against everything else\u2019s <b>76 / 44 / 14</b>.",
+  stg:"The body no longer stores CU figures at all \u2014 a fourth copy is a fourth chance to drift, and this one had. <b>C172 is 3 CU</b>; the expected next course is <b>D077</b>. Both were readable from the degree plan the blind session could not open."},
+ {id:"S1",area:"Sync",st:"open",
+  act:"Add two <code>.stignore</code> lines on <b>Golem-PC</b>.",
+  ver:"<b>Not done, and it cannot be done from here.</b> Golem-PC stops offering those files and its replicated volume drops to roughly the Mac\u2019s 661 MB.",
+  stg:"<code>.stignore</code> is never synced between devices, so this is not reachable from the Mac and no Mac-side check can even see it. Carried since 31 August."}
+];
+
+/* ================================================================= THEME */
+const root=document.documentElement, btn=document.getElementById("themeBtn");
+btn.addEventListener("click",()=>{
+  const dark = root.getAttribute("data-theme")==="dark" ||
+    (!root.hasAttribute("data-theme") && matchMedia("(prefers-color-scheme:dark)").matches);
+  root.setAttribute("data-theme", dark?"light":"dark");
+  drawTier0(); paintMap();
+});
+function cssv(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()}
+const DOTTXT={new:"Confirmed this session by tool receipt.",old:"Carried from an earlier source — not re-read this session.",
+  none:"Proposed this session. No vault counterpart exists yet.",conf:"Sources disagree. Inspect when the Mac is linked."};
+function pd(k,src){const t=(src?src+" — ":"")+DOTTXT[k];
+  return `<span class="pd pd-${k}" data-tip="${t}" role="img" aria-label="${t}"></span>`}
+const REDUCED = matchMedia("(prefers-reduced-motion:reduce)").matches;
+
+/* ================================================================= VITALS */
+/* Eight tiles, and eight is the point: it factors 8/4/2/1, so every breakpoint
+   below lays out FULL ROWS with no ragged remainder. Position P/L was removed —
+   it measures the brokerage account, not the vault. Its slot went to stale notes,
+   which is a health signal the audit protocol already names but that was only
+   visible buried in the open-items list. */
+const vitals=[
+ {k:"Tier 0 words",v:"3,609",n:"budget 6,000",d:"new",ds:"audit-metrics.sh, run 4 Sep"},
+ {k:"Vault notes",v:"173",n:"384,693 words",d:"new",ds:"audit-metrics.sh, 4 Sep — down from 177"},
+ {k:"Broken links",v:"0",n:"and 0 orphans",d:"new",ds:"vault-check.sh AND graph.py, 4 Sep — two tools, agreeing"},
+ {k:"Stale notes",v:"13",n:"active, untouched 60d+",d:"new",ds:"vault-check.sh, 4 Sep — unchanged since 31 Aug"},
+ {k:"Live projects",v:String(DATA.projects.length),n:"Gekko archived to disk",d:"new",ds:"board.sh, 4 Sep"},
+ {k:"Questions settled",v:String(DATA.qs.filter(q=>q.r).length)+" / "+DATA.qs.length,n:"Q10 alone still blocks",d:"new",ds:"DevExplore/decisions.md, 4 Sep"},
+ {k:"Inspections applied",v:"8 / 10",n:"2 open — not skipped",d:"new",ds:"T2 is Tim's to author; S1 needs Golem-PC"},
+ {k:"Graph nodes",v:"292",n:"965 edges · 173 notes + 119 code",d:"new",ds:"graph.py + graph-repos.py, 4 Sep"}
+];
+document.getElementById("vitals").innerHTML = vitals.map(v=>
+ `<div class="vital"><div class="k">${v.k}</div><div class="v ${v.d==="old"?"attn":v.d==="conf"?"crit":v.d==="new"?"good":""}">${v.v}</div><div class="n">${pd(v.d,v.ds)}${v.n}</div></div>`).join("");
+
+/* ================================================================= CARDS */
+const sev=p=> p.f?"crit" : p.s==="shelved"||p.s==="future" ? "dormant" : p.w==="tim" ? "attn" : "ok";
+const GLYPH={ok:"●",attn:"◆",crit:"▲",dormant:"○"};
+const LABEL={ok:"on track",attn:"needs you",crit:"flagged",dormant:"dormant"};
+const days=d=>Math.round((Date.now()-new Date(d+"T12:00:00Z"))/864e5);
+
+document.getElementById("cards").innerHTML = DATA.projects.map((p,i)=>{
+  const k=sev(p), subs=DATA.subs.filter(s=>s.p===p.p);
+  return `<button class="card s-${k}" type="button" data-i="${i}" data-sev="${k}" data-state="${p.s}" data-wait="${p.w}" data-flag="${p.f?1:0}" aria-expanded="false">
+    <div class="top"><span class="name"><span class="swatch" style="background:var(${COLOR_OF(p.p)})"></span>${p.p}</span>
+      <span class="pill ${k}"><span aria-hidden="true">${GLYPH[k]}</span>${LABEL[k]}</span></div>
+    <div class="head">${pd(p.dot,p.src)}${p.h}</div>
+    <div class="nx"><b>Next</b>${p.n}</div>
+    ${p.f?`<div class="flagline"><span class="g" aria-hidden="true">▲</span><span><strong>Flag:</strong> ${p.f}</span></div>`:""}
+    ${p.cleared?`<div class="flagline cleared"><span class="g" aria-hidden="true">●</span><span><strong>Cleared:</strong> ${p.cleared}</span></div>`:""}
+    ${p.conflict?`<div class="flagline"><span class="g" aria-hidden="true">▲</span><span><strong>Conflict:</strong> ${p.conflict}</span></div>`:""}
+    ${p.resolved?`<div class="flagline cleared"><span class="g" aria-hidden="true">●</span><span><strong>Resolved:</strong> ${p.resolved}</span></div>`:""}
+    ${p.corr?`<div class="flagline corr"><span class="g" aria-hidden="true">✎</span><span><strong>Corrected here:</strong> ${p.corr}</span></div>`:""}
+    ${p.note?`<div class="cardnote">${pd(p.note.k,"")}${p.note.t}</div>`:""}
+    <div class="meta"><span class="prov${p.prov.indexOf("IBKR")===0?" live":""}">${p.prov}</span>
+      <span>${subs.length?subs.length+" subsystems ▾":""}</span></div>
+    ${subs.length?`<div class="detail">${subs.map(s=>{
+       const sk = s.s==="working"?"ok" : s.s==="blocked"?"crit" : s.s==="building"||s.s==="planning"?"attn":"dormant";
+       return `<div class="subrow"><span class="sname">${s.new?pd("none","proposed 4 Sep — not a vault subsystem"):""}${s.n}</span>
+         <span class="pill ${sk}" style="flex:none"><span aria-hidden="true">${GLYPH[sk]}</span>${s.s}</span>
+         <span class="sdet">${s.d}</span></div>`;}).join("")}</div>`:""}
+  </button>`;
+}).join("");
+document.querySelectorAll(".card").forEach(c=>c.addEventListener("click",()=>{
+  const o=c.classList.toggle("open"); c.setAttribute("aria-expanded",o?"true":"false");
+}));
+
+const counts={all:DATA.projects.length,
+  flag:DATA.projects.filter(p=>p.f).length,
+  tim:DATA.projects.filter(p=>p.w==="tim").length,
+  active:DATA.projects.filter(p=>p.s==="active").length};
+Object.entries(counts).forEach(([k,v])=>{const e=document.getElementById("c-"+k); if(e)e.textContent=v;});
+document.querySelectorAll(".chip[data-f]").forEach(ch=>ch.addEventListener("click",()=>{
+  document.querySelectorAll(".chip[data-f]").forEach(x=>x.setAttribute("aria-pressed","false"));
+  ch.setAttribute("aria-pressed","true");
+  const f=ch.dataset.f;
+  document.querySelectorAll(".card").forEach(c=>{
+    const show = f==="all" || (f==="flag"&&c.dataset.flag==="1") ||
+                 (f==="tim"&&c.dataset.wait==="tim") || (f==="active"&&c.dataset.state==="active");
+    c.style.display = show?"":"none";
+  });
+}));
+
+/* ================================================================= QUESTIONS */
+/* Settled questions are not open questions. They live in DevExplore/decisions.md
+   with their reasoning, which is the file's own rule — a question that is answered
+   MOVES. Showing them here spends the panel's space on things needing no attention. */
+const OPEN_QS = DATA.qs.filter(q=>!q.r);
+const SETTLED_N = DATA.qs.length - OPEN_QS.length;
+document.getElementById("qs").innerHTML =
+  OPEN_QS.map(q=>{
+    const cls = (q.g==="deferred")?"park":"";
+    return `<button class="q" type="button" aria-expanded="false"><div class="qh">
+      <span class="qid">${q.id}</span><span class="qt">${q.t}</span>
+      ${q.g?`<span class="gate ${cls}">${q.g}</span>`:""}</div>
+      <div class="qb">${q.b}</div></button>`;
+  }).join("")
+  + `<p class="qfoot">${SETTLED_N} settled and written up in <code>DevExplore/decisions.md</code> — not listed here.
+     <b>Nothing is blocking Phase 3.</b> The entry above is parked, not outstanding.</p>`;
+document.querySelectorAll(".q").forEach(q=>q.addEventListener("click",()=>{
+  const o=q.classList.toggle("open"); q.setAttribute("aria-expanded",o?"true":"false");
+}));
+
+document.getElementById("tiers").innerHTML = DATA.tiers.map(t=>
+ `<div class="tier ${t.n===1?"t1":""}"><span class="tnum">${t.n}</span>
+   <span><span class="tname">${t.name}</span><br><span class="titems">${t.it}</span></span></div>`).join("");
+
+document.getElementById("ledger").innerHTML =
+ `<thead><tr><th>Date</th><th>Phase</th><th class="num">Notes</th><th class="num">Words</th><th class="num">Tier 0</th><th class="num">Broken</th><th class="num">Orphan</th><th class="num">No FM</th></tr></thead>
+  <tbody>${DATA.ledger.map(r=>`<tr>${r.map((c,i)=>`<td${i>1?' class="num"':''}>${c}</td>`).join("")}</tr>`).join("")}</tbody>`;
+
+/* ================= VAULT OPEN ITEMS =================
+   Ordered by whether anything is required of a human, never by topic:
+   open items first, resolved last. A resolved item is ONE LINE with no
+   explanation — it is there to confirm the thing closed, not to re-argue it —
+   and it drops off the list three days after it closed. Anything older than
+   that is history and lives in the progress log. */
+const RESOLVED_TTL_DAYS = 3;
+const VITEMS=[
+ {st:"open", g:"▲", k:"crit", t:"<strong>Golem-PC still needs the two <code>.stignore</code> lines — and now blocks a second thing</strong>",
+  d:"<code>.stignore</code> is never synced between devices, so this cannot be done <em>or checked</em> from the Mac. It also has to receive the <code>osvc-outbox</code> share when that exists, <strong>or sessions run there show an empty queue and skip real items silently</strong>. This same never-syncs property is why nesting the outbox inside the vault was rejected.",
+  dot:["old","carried since 31 Aug — unreachable from the Mac"]},
+ {st:"open", g:"◆", k:"attn", t:"<strong>13 notes stale</strong>",
+  d:"<code>status: active</code>, untouched 60+ days. Candidates for the next content pass.",
+  dot:["new","vault-check.sh, measured 4 Sep"]},
+ {st:"done", on:"2026-09-04", t:"Live C172 assessment PDF deleted from the vault — <em>you confirmed 4 Sep</em>; retained copy is outside it."},
+ {st:"done", on:"2026-09-04", t:"Gekko retired to disk — 30 files archived and bannered; notes 177 → 173."},
+ {st:"done", on:"2026-09-04", t:"Artifact mirror rule 4 satisfiable from Cowork after all — the recorded dead-end was about one route, not the goal."},
+ {st:"done", on:"2026-08-31", t:"Code trees out of Syncthing — replicated volume 819 MB → 661 MB."}
+];
+const ageDays = d => Math.floor((Date.now()-new Date(d+"T12:00:00Z"))/864e5);
+(function renderVaultItems(){
+  const open=VITEMS.filter(i=>i.st==="open");
+  const done=VITEMS.filter(i=>i.st==="done" && ageDays(i.on)<=RESOLVED_TTL_DAYS);
+  const dropped=VITEMS.filter(i=>i.st==="done" && ageDays(i.on)>RESOLVED_TTL_DAYS).length;
+  const row=i=>`<div class="vrow">
+      <span class="vg" style="color:var(--${i.k})">${i.g}</span>
+      <div>${i.t} ${i.dot?`<span class="dotslot" data-k="${i.dot[0]}" data-s="${i.dot[1]}"></span>`:""}
+        <span style="color:var(--ink-2)"> — ${i.d}</span></div></div>`;
+  const doneRow=i=>`<div class="vrow done"><span class="vg" style="color:var(--ok)">●</span><div>${i.t}</div></div>`;
+  document.getElementById("vaultitems").innerHTML =
+    (open.length?open.map(row).join(""):`<div class="vrow"><span class="vg" style="color:var(--ok)">●</span><div>Nothing open.</div></div>`)
+    + (done.length?`<div class="vsep">resolved · last ${RESOLVED_TTL_DAYS} days</div>`+done.map(doneRow).join(""):"")
+    + `<p class="qfoot">Resolved items drop off after ${RESOLVED_TTL_DAYS} days${dropped?` — ${dropped} older one${dropped===1?"":"s"} not shown`:""}. They stay in <code>progress/progress-log.md</code>.</p>`;
+})();
+
+document.getElementById("applied").innerHTML = DATA.applied.map(c=>
+ `<div class="cl"><span class="tag done">applied</span><span class="txt">${c.t}
+   <span class="rcpt">${pd("new",c.r)}receipt: ${c.r}</span></span></div>`).join("");
+
+/* Grouped by whether anything is required of a human, in that order. Sorting by
+   id would bury the two items that still need someone among eight that do not. */
+const INSP_GROUPS=[
+ ["open",  "Still open",       "needs a decision or a machine this session cannot reach"],
+ ["noop",  "No action needed", "checked against the vault and already correct"],
+ ["applied","Applied",         "written to the vault and verified from disk"]
+];
+document.getElementById("inspect").innerHTML = INSP_GROUPS.map(([st,title,sub])=>{
+  const rows=INSPECT.filter(i=>i.st===st);
+  if(!rows.length) return "";
+  return `<div class="inspgrp"><div class="inspgh">
+      <span class="pill ${st==="applied"?"ok":st==="noop"?"dormant":"attn"}">${title}</span>
+      <span class="inspgs">${rows.length} · ${sub}</span></div>` +
+    rows.map(i=>`<div class="insp">
+      <div class="ihead"><span class="iid">${i.id}</span><span class="iarea">${i.area}</span>
+        <span class="istate">${pd(i.st==="open"?"none":"new", i.st==="open"?"not actionable from the Mac":"verified from disk, 4 Sep")}${i.st==="open"?"open":"verified"}</span></div>
+      <div class="ibody">
+        <div class="irow"><b>Asked for</b><span>${i.act}</span></div>
+        <div class="irow"><b>Result</b><span>${i.ver}</span></div>
+        <div class="irow"><b>Note</b><span>${i.stg}</span></div>
+      </div>
+    </div>`).join("") + `</div>`;
+}).join("");
+
+function labelTables(){
+  document.querySelectorAll("table.tbl").forEach(t=>{
+    const hs=[...t.querySelectorAll("thead th")].map(h=>h.textContent.trim());
+    t.querySelectorAll("tbody tr").forEach(tr=>{
+      [...tr.children].forEach((td,i)=>{ if(hs[i]) td.setAttribute("data-l",hs[i]); });
+    });
+  });
+}
+
+/* ================================================================= TIER 0 CHART */
+const tip=document.getElementById("tip");
+function drawTier0(){
+  const svg=document.getElementById("tier0"), W=620,H=150,PL=42,PR=12,PT=14,PB=26;
+  const pts=DATA.tier0, max=8800, min=2600;
+  const x=i=>PL+(i/(pts.length-1))*(W-PL-PR);
+  const y=v=>PT+(1-(v-min)/(max-min))*(H-PT-PB);
+  const ink3=cssv("--ink-3"), acc=cssv("--accent"), grid=cssv("--grid"), attn=cssv("--attn"), panel=cssv("--panel");
+  const line=pts.map((p,i)=>`${i?"L":"M"}${x(i).toFixed(1)},${y(p.v).toFixed(1)}`).join(" ");
+  const area=`${line} L${x(pts.length-1).toFixed(1)},${y(min)} L${x(0).toFixed(1)},${y(min)} Z`;
+  const gl=[3000,5000,7000].map(v=>
+    `<line x1="${PL}" y1="${y(v)}" x2="${W-PR}" y2="${y(v)}" stroke="${grid}" stroke-width="1"/>
+     <text x="${PL-7}" y="${y(v)+3.5}" text-anchor="end" font-family="IBM Plex Mono,monospace" font-size="9" fill="${ink3}">${v/1000}k</text>`).join("");
+  const ri=pts.findIndex(p=>p.redef);
+  svg.innerHTML=`
+   <defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+     <stop offset="0%" stop-color="${acc}" stop-opacity=".26"/><stop offset="100%" stop-color="${acc}" stop-opacity="0"/>
+   </linearGradient></defs>
+   ${gl}
+   <line x1="${PL}" y1="${y(6000)}" x2="${W-PR}" y2="${y(6000)}" stroke="${attn}" stroke-width="1.5" stroke-dasharray="2 3"/>
+   <text x="${W-PR}" y="${y(6000)-5}" text-anchor="end" font-family="IBM Plex Mono,monospace" font-size="9" fill="${attn}">budget 6,000</text>
+   <path d="${area}" fill="url(#g1)"/>
+   <path d="${line}" fill="none" stroke="${acc}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+   <line x1="${x(ri)-((x(1)-x(0))/2)}" y1="${PT-6}" x2="${x(ri)-((x(1)-x(0))/2)}" y2="${H-PB}" stroke="${ink3}" stroke-width="1" stroke-dasharray="3 3"/>
+   <text x="${x(ri)-((x(1)-x(0))/2)-5}" y="${PT-1}" text-anchor="end" font-family="IBM Plex Mono,monospace" font-size="8.5" fill="${ink3}">definition change</text>
+   ${pts.map((p,i)=>`<circle cx="${x(i)}" cy="${y(p.v)}" r="${i===pts.length-1?4.5:2.6}"
+      fill="${i===pts.length-1?acc:panel}" stroke="${acc}" stroke-width="2"/>`).join("")}
+   <text x="${x(pts.length-1)}" y="${y(pts[pts.length-1].v)+17}" text-anchor="end" font-family="IBM Plex Mono,monospace" font-size="10" font-weight="500" fill="${acc}">3,609</text>
+   <text x="${x(0)}" y="${y(pts[0].v)-9}" font-family="IBM Plex Mono,monospace" font-size="10" fill="${ink3}">8,240</text>
+   ${pts.map((p,i)=>`<rect x="${x(i)-14}" y="0" width="28" height="${H}" fill="transparent" data-i="${i}" class="hit" style="cursor:crosshair"/>`).join("")}`;
+  svg.querySelectorAll(".hit").forEach(r=>{
+    r.addEventListener("mousemove",e=>{const p=pts[+r.dataset.i];
+      tip.innerHTML=`<b>${p.v.toLocaleString()}</b> words<br>2026-${p.d} · ${p.l}`;
+      tip.style.opacity=1; tip.style.left=Math.min(innerWidth-270,e.clientX+14)+"px"; tip.style.top=(e.clientY-46)+"px";});
+    r.addEventListener("mouseleave",()=>tip.style.opacity=0);
+  });
+}
+
+/* ================================================================= ECOSYSTEM MAP */
+let MW=900, MH=600;
+let NODES=[], EDGES=[], byId={}, active=new Set(GORDER);
+
+function buildGraph(){
+  NODES=[]; EDGES=[]; byId={};
+  GNODES.forEach(([id,gi,deg,pri])=>{
+    const g=GORDER[gi], kind=GKIND[gi];
+    const n={id, proj:g, kind, primary:!!pri, deg:0, adj:[]};
+    if(pri) n.label = kind==="core" ? "vault core" : g;
+    NODES.push(n); byId[id]=n;
+  });
+  GEDGES.forEach(([a,b])=>{
+    const A=NODES[a], B=NODES[b];
+    if(!A||!B||A===B) return;
+    EDGES.push([A.id,B.id]);
+    A.deg++; B.deg++; A.adj.push(B.id); B.adj.push(A.id);
+  });
+  /* radius tracks AREA (sqrt), so a 40-link node reads as ~3x a 4-link one rather
+     than 10x. Project nodes then get a flat 1.2x on top: the vault's own project
+     notes are the subject, and the core + code nodes are context around them. */
+  NODES.forEach(n=>{
+    const base = 2.5 + 1.95*Math.sqrt(n.deg);
+    n.r = n.kind==="proj" ? base*1.2 : base;
+  });
+}
+
+/* deterministic clustered layout + light relaxation — no library, seeded, same every load */
+function layout(){
+  const cx=MW/2, cy=MH/2;
+  /* Two rings, and the split is the point: the vault (projects + core) sits on the
+     outer ring, the code repos on an inner one. That is the same boundary the audit
+     protocol draws when it excludes repos/ from every vault metric — here it is
+     visible instead of documented. */
+  const outer=GORDER.filter(g=>KIND_OF(g)!=="repo");
+  const inner=GORDER.filter(g=>KIND_OF(g)==="repo");
+  const tall = MH>MW;
+  const place=(groups,rx,ry,phase)=>{
+    groups.forEach((pr,pi)=>{
+      const a=(pi/groups.length)*Math.PI*2 - Math.PI/2 + phase;
+      const hx=cx+Math.cos(a)*rx, hy=cy+Math.sin(a)*ry;
+      const kids=NODES.filter(n=>n.proj===pr && !n.primary);
+      const prim=NODES.find(n=>n.proj===pr && n.primary);
+      if(prim){ prim.x=hx; prim.y=hy; }
+      const spread=(tall?15:19) + Math.sqrt(kids.length)*(tall?7:8.6);
+      kids.forEach((n,i)=>{
+        const ka=(i/Math.max(1,kids.length))*Math.PI*2 + pi*0.7;
+        const kr=spread*(0.60+0.40*((i*7)%5)/4);
+        n.x=hx+Math.cos(ka)*kr; n.y=hy+Math.sin(ka)*kr*0.92;
+      });
+    });
+  };
+  place(outer, MW*(tall?0.325:0.385), MH*(tall?0.35:0.345), 0);
+  place(inner, MW*(tall?0.155:0.185), MH*(tall?0.16:0.185), Math.PI/inner.length);
+
+  for(let it=0; it<95; it++){
+    for(let i=0;i<NODES.length;i++){
+      for(let j=i+1;j<NODES.length;j++){
+        const a=NODES[i], b=NODES[j];
+        let dx=b.x-a.x, dy=b.y-a.y, d=Math.hypot(dx,dy)||0.01;
+        const min=a.r+b.r+5.5;
+        if(d<min){
+          const push=(min-d)/d*0.5;
+          const ax=a.primary?0.12:1, bx=b.primary?0.12:1;
+          a.x-=dx*push*ax; a.y-=dy*push*ax; b.x+=dx*push*bx; b.y+=dy*push*bx;
+        }
+      }
+    }
+    NODES.forEach(n=>{
+      const m=n.r+11;
+      n.x=Math.max(m,Math.min(MW-m,n.x));
+      n.y=Math.max(m+9,Math.min(MH-m,n.y));
+    });
+  }
+}
+
+const svgMap=document.getElementById("map");
+const mapStage=svgMap.parentElement;
+function sizeMap(){
+  const w=mapStage.clientWidth||900;
+  const narrow=w<620;
+  MW = narrow?470:900;
+  if(narrow){
+    MH = 680;
+    mapStage.style.aspectRatio = MW+" / "+MH;
+  }else{
+    /* wide: the stage is stretched by the grid to the sidebar's height, so take
+       MH from the real box instead of a fixed 3:2 — otherwise the graph is laid
+       out in 600 units inside a taller stage and leaves dead space below it */
+    mapStage.style.aspectRatio = "";
+    const h = mapStage.clientHeight || 600;
+    MH = Math.max(500, Math.round(MW * h / w));
+  }
+  svgMap.setAttribute("viewBox",`0 0 ${MW} ${MH}`);
+}
+function paintMap(){
+  const edgeCol=cssv("--map-edge"), inkTxt=cssv("--ink");
+  const col=pr=>cssv(COLOR_OF(pr));
+  const edgeSvg=EDGES.map(([a,b],i)=>{
+    const A=byId[a],B=byId[b]; if(!A||!B) return "";
+    const cross = A.proj!==B.proj;
+    return `<line class="ed" data-a="${a}" data-b="${b}" data-pa="${A.proj}" data-pb="${B.proj}"
+      x1="${A.x.toFixed(1)}" y1="${A.y.toFixed(1)}" x2="${B.x.toFixed(1)}" y2="${B.y.toFixed(1)}"
+      stroke="${cross?col(A.proj):edgeCol}" stroke-width="${cross?1.5:1}" stroke-opacity="${cross?.55:1}"
+      ${cross?'stroke-dasharray="4 3"':''}/>`;
+  }).join("");
+  const nodeSvg=NODES.map(n=>{
+    const c=col(n.proj);
+    return `<g class="node" data-id="${n.id}" data-proj="${n.proj}">
+      ${n.primary?`<circle cx="${n.x.toFixed(1)}" cy="${n.y.toFixed(1)}" r="${(n.r+5).toFixed(1)}" fill="none" stroke="${c}" stroke-width="1.2" stroke-opacity=".45"/>`:""}
+      <circle cx="${n.x.toFixed(1)}" cy="${n.y.toFixed(1)}" r="${n.r.toFixed(1)}" fill="${c}" fill-opacity="${n.primary?1:.72}"/>
+    </g>`;
+  }).join("");
+  const labelSvg=NODES.filter(n=>n.primary).map(n=>
+    `<text class="mlabel" x="${n.x.toFixed(1)}" y="${(n.y-n.r-13.5).toFixed(1)}" text-anchor="middle" fill="${inkTxt}">${n.label}</text>`).join("");
+  svgMap.innerHTML=`<g id="edgeL">${edgeSvg}</g><g id="nodeL">${nodeSvg}</g><g id="labelL">${labelSvg}</g><g id="dotL"></g>`;
+  wireNodes(); applyFilter();
+}
+
+function wireNodes(){
+  svgMap.querySelectorAll(".node").forEach(g=>{
+    const n=byId[g.dataset.id];
+    g.addEventListener("mousemove",e=>{
+      const kindTxt = n.kind==="repo" ? "code · "+n.proj : n.kind==="core" ? "vault core" : n.proj;
+      tip.innerHTML=`<b>${n.id.replace(/\/$/,"").split("/").pop()}</b><br><span style="opacity:.7">${n.id}</span><br>${n.deg} link${n.deg===1?"":"s"} · ${kindTxt}`;
+      tip.style.opacity=1;
+      tip.style.left=Math.min(innerWidth-280,e.clientX+14)+"px"; tip.style.top=(e.clientY-58)+"px";
+    });
+    g.addEventListener("mouseleave",()=>tip.style.opacity=0);
+    g.addEventListener("click",()=>fire(n.id));
+  });
+}
+
+function applyFilter(){
+  svgMap.querySelectorAll(".node").forEach(g=>
+    g.classList.toggle("dimmed", !active.has(g.dataset.proj)));
+  svgMap.querySelectorAll(".ed").forEach(l=>
+    l.classList.toggle("dimmed", !(active.has(l.dataset.pa)&&active.has(l.dataset.pb))));
+  svgMap.querySelectorAll(".mlabel").forEach((t,i)=>{
+    const pr=NODES.filter(n=>n.primary)[i]?.proj;
+    t.classList.toggle("dimmed", pr?!active.has(pr):false);
+  });
+}
+
+/* ---- the dot rule: a write fires from that file, one hop along each of its links ---- */
+const readout=document.getElementById("readout");
+let running=!REDUCED, timer=null;
+
+function fire(id){
+  const n=byId[id]; if(!n) return;
+  const dotL=svgMap.querySelector("#dotL");
+  const c=cssv(COLOR_OF(n.proj));
+  n.adj.forEach((tid,i)=>{
+    const t=byId[tid]; if(!t) return;
+    const d=document.createElementNS("http://www.w3.org/2000/svg","circle");
+    d.setAttribute("r","2.9"); d.setAttribute("fill",c);
+    d.setAttribute("cx",n.x); d.setAttribute("cy",n.y);
+    dotL.appendChild(d);
+    const dur=460+Math.random()*220, t0=performance.now()+i*26;
+    (function step(now){
+      const p=Math.min(1,Math.max(0,(now-t0)/dur));
+      const e=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;
+      d.setAttribute("cx",(n.x+(t.x-n.x)*e).toFixed(1));
+      d.setAttribute("cy",(n.y+(t.y-n.y)*e).toFixed(1));
+      d.setAttribute("opacity",(p<.15?p/.15:p>.82?(1-p)/.18:1).toFixed(2));
+      if(p<1) requestAnimationFrame(step); else d.remove();
+    })(performance.now());
+  });
+  /* source flash */
+  const g=svgMap.querySelector(`.node[data-id="${CSS.escape(id)}"] circle:last-of-type`);
+  if(g){
+    const ring=document.createElementNS("http://www.w3.org/2000/svg","circle");
+    ring.setAttribute("cx",n.x); ring.setAttribute("cy",n.y); ring.setAttribute("r",n.r);
+    ring.setAttribute("fill","none"); ring.setAttribute("stroke",c); ring.setAttribute("stroke-width","2");
+    dotL.appendChild(ring);
+    const t0=performance.now();
+    (function step(now){
+      /* clamp low as well as high — the dot loop above already does, and an
+         unclamped p can go momentarily negative and emit a negative radius */
+      const p=Math.max(0,Math.min(1,(now-t0)/620));
+      ring.setAttribute("r",(n.r+p*17).toFixed(1));
+      ring.setAttribute("stroke-opacity",(1-p).toFixed(2));
+      if(p<1) requestAnimationFrame(step); else ring.remove();
+    })(performance.now());
+  }
+  const short=id.replace(/^projects\//,"").replace(/^reference\//,"");
+  readout.innerHTML=`<span class="w">write</span> ${short}<br><span class="hop">→ ${n.adj.length} link${n.adj.length===1?"":"s"} refreshed, one hop</span>`;
+}
+
+/* a plausible working sequence — writes cluster where the work is */
+/* the files this session actually wrote, in the order it wrote them */
+const SEQ=["projects/DevExplore/decisions.md","projects/DevExplore/roadmap/open-questions.md",
+  "projects/DevExplore/roadmap/build-plan.md","Trading/journal.md","Trading/status.md","Trading/INDEX.md",
+  "UNIVERSITY/status.md","meta/audit-history.md","overseer/projects-index.md",
+  "overseer/cross-project-opportunities.md","reference/environment.md","CLAUDE.md",
+  "progress/progress-log.md","projects/DevExplore/status.md"];
+let seqI=0;
+function tick(){
+  if(!running) return;
+  let id=SEQ[seqI++%SEQ.length];
+  if(!byId[id]) id=NODES[Math.floor(Math.random()*NODES.length)].id;
+  if(active.has(byId[id].proj)) fire(id);
+  timer=setTimeout(tick, 1500+Math.random()*900);
+}
+const playBtn=document.getElementById("playBtn");
+playBtn.addEventListener("click",()=>{
+  running=!running; playBtn.textContent=running?"⏸ pause":"▶ play";
+  playBtn.setAttribute("aria-pressed",running?"true":"false");
+  if(running) tick(); else clearTimeout(timer);
+});
+document.getElementById("fireBtn").addEventListener("click",()=>{
+  const pool=NODES.filter(n=>active.has(n.proj));
+  if(pool.length) fire(pool[Math.floor(Math.random()*pool.length)].id);
+});
+
+/* legend doubles as a project filter */
+function buildLegend(){
+  const band=(title,groups)=>{
+    if(!groups.length) return "";
+    return `<div class="lgband"><div class="lgt">${title}</div>` + groups.map(pr=>{
+      const cnt=NODES.filter(n=>n.proj===pr).length;
+      const nm = pr==="core" ? "vault core" : pr;
+      return `<button class="lg" type="button" data-p="${pr}" aria-pressed="true" title="${nm}">
+        <span class="dot" style="background:var(${COLOR_OF(pr)})"></span><span class="lgn">${nm}</span><span class="n">${cnt}</span></button>`;
+    }).join("") + `</div>`;
+  };
+  const projs=GORDER.filter(g=>KIND_OF(g)==="proj");
+  const core =GORDER.filter(g=>KIND_OF(g)==="core");
+  const repos=GORDER.filter(g=>KIND_OF(g)==="repo");
+  document.getElementById("legend").innerHTML =
+    band("projects",projs)+band("vault, outside a project",core)+band("code repos \u00b7 git-tracked",repos);
+  document.querySelectorAll(".lg").forEach(b=>b.addEventListener("click",()=>{
+    const pr=b.dataset.p;
+    if(active.has(pr)&&active.size>1){active.delete(pr); b.setAttribute("aria-pressed","false");}
+    else {active.add(pr); b.setAttribute("aria-pressed","true");}
+    applyFilter();
+  }));
+  const setAll=(on)=>{ active = on ? new Set(GORDER) : new Set([GORDER[0]]);
+    document.querySelectorAll(".lg").forEach(b=>b.setAttribute("aria-pressed", active.has(b.dataset.p)?"true":"false"));
+    applyFilter(); };
+  const only=(kind)=>{ active=new Set(GORDER.filter(g=>KIND_OF(g)===kind));
+    document.querySelectorAll(".lg").forEach(b=>b.setAttribute("aria-pressed", active.has(b.dataset.p)?"true":"false"));
+    applyFilter(); };
+  const bAll=document.getElementById("lgAll"), bV=document.getElementById("lgVault"), bC=document.getElementById("lgCode");
+  if(bAll) bAll.addEventListener("click",()=>setAll(true));
+  if(bV) bV.addEventListener("click",()=>{ active=new Set(GORDER.filter(g=>KIND_OF(g)!=="repo"));
+    document.querySelectorAll(".lg").forEach(b=>b.setAttribute("aria-pressed", active.has(b.dataset.p)?"true":"false")); applyFilter(); });
+  if(bC) bC.addEventListener("click",()=>only("repo"));
+}
+
+document.addEventListener("mouseover",e=>{
+  const el=e.target.closest("[data-tip]"); if(!el) return;
+  tip.textContent=el.dataset.tip; tip.style.opacity=1;
+  const r=el.getBoundingClientRect();
+  tip.style.left=Math.min(innerWidth-280,r.left)+"px"; tip.style.top=(r.top-46)+"px";
+});
+document.addEventListener("mouseout",e=>{ if(e.target.closest("[data-tip]")) tip.style.opacity=0; });
+/* touch: a dot is tappable, and the tap does not also toggle the card it sits in */
+let tipT=null;
+document.addEventListener("click",e=>{
+  const el=e.target.closest(".pd[data-tip]"); if(!el) return;
+  e.stopPropagation(); e.preventDefault();
+  tip.textContent=el.dataset.tip; tip.style.opacity=1;
+  const r=el.getBoundingClientRect();
+  tip.style.left=Math.max(10,Math.min(innerWidth-view(tip)-10,r.left-8))+"px";
+  tip.style.top=Math.max(8,r.top-48)+"px";
+  clearTimeout(tipT); tipT=setTimeout(()=>tip.style.opacity=0,3200);
+},true);
+function view(el){return el.getBoundingClientRect().width||240}
+
+document.querySelectorAll(".dotslot").forEach(el=>{el.outerHTML=pd(el.dataset.k, el.dataset.s);});
+
+/* ================================================================= BOOT */
+buildGraph(); sizeMap(); layout(); paintMap(); buildLegend(); drawTier0(); labelTables();
+/* the stage is stretched by the sidebar, so its final height is only known after
+   the first paint — re-measure once and relayout if the first guess was off */
+requestAnimationFrame(()=>{ const before=MH; sizeMap();
+  if(Math.abs(MH-before)>8){ layout(); paintMap(); } else { MH=before; } });
+
+
+/* ================= MQTT live-node animation — SIMULATED =================
+   The real thing runs on OSVC-01, on the LAN, where the broker is one hop away.
+   It cannot run here: this page is served from claude.ai inside a sandbox that
+   blocks WebSocket to any non-allowlisted host, and Q5 rules the LAN is never
+   exposed. Both point the same way, and neither is a bug.
+   So this is a demonstration of the SPEC, driven by a local timer. It is
+   labelled as simulated wherever it is visible, and it must stay that way. */
+const APPS=[
+  {id:"osvc-web",     node:"projects/DevExplore/INDEX.md",                  state:"running"},
+  {id:"edwinpit-core",node:"EDWinPit-CORE/",                               state:"running"},
+  {id:"panelcore",    node:"PANELcore/",                                   state:"running"},
+  {id:"stylebert-tts",node:"projects/EDSimpit/systems/glados-copilot.md",  state:"degraded"},
+  {id:"edwinpit-radio",node:"EDWinPit-Radio/",                             state:"stopped"}
+];
+const STATE_COL={running:"--ok",degraded:"--attn",stopped:"--dormant",stale:"--crit"};
+function renderApps(){
+  const el=document.getElementById("appstate"); if(!el) return;
+  el.innerHTML=APPS.map(a=>`<div class="approw">
+     <span class="appdot" style="background:var(${STATE_COL[a.state]})"></span>
+     <code class="appid">osvc/app/${a.id}/state</code>
+     <span class="appst" style="color:var(${STATE_COL[a.state]})">${a.state}</span></div>`).join("");
+}
+function pulseApps(){
+  if(!running) return;
+  APPS.filter(a=>a.state==="running").forEach(a=>{ if(byId[a.node] && active.has(byId[a.node].proj)) fire(a.node); });
+  setTimeout(pulseApps, 4200);
+}
+renderApps();
+setTimeout(pulseApps, 2200);
+let rzT=null, lastW=mapStage.clientWidth;
+addEventListener("resize",()=>{
+  clearTimeout(rzT);
+  rzT=setTimeout(()=>{
+    const w=mapStage.clientWidth;
+    if(Math.abs(w-lastW)<24) return;      /* ignore mobile URL-bar jitter */
+    lastW=w; sizeMap(); layout(); paintMap();
+  },180);
+},{passive:true});
+if(!REDUCED) tick(); else {playBtn.textContent="▶ play"; playBtn.setAttribute("aria-pressed","false"); readout.textContent="paused — reduced motion";}
+(function(){const d=days("2026-09-04");
+ document.getElementById("age").textContent = d<=0?"rendered today":`rendered ${d} day${d===1?"":"s"} ago`;})();
+</script>
